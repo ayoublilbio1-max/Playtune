@@ -10,6 +10,8 @@ import type {
   Progress,
   QueueItem,
   RepeatMode,
+  SleepTimerInfo,
+  VolumeInfo,
 } from "./PlaytuneEngine.types";
 
 declare class PlaytuneEngineModule extends NativeModule<PlaytuneEngineEvents> {
@@ -46,6 +48,22 @@ declare class PlaytuneEngineModule extends NativeModule<PlaytuneEngineEvents> {
   setRepeatMode(mode: RepeatMode): Promise<void>;
   getState(): Promise<PlayerState>;
   getProgress(): Promise<Progress>;
+
+  // Phone media volume (no system volume bar is shown)
+  getVolume(): Promise<VolumeInfo>;
+  setVolume(index: number): Promise<VolumeInfo>;
+
+  // Sleep timer (runs in the background service)
+  startSleepTimer(durationMs: number): Promise<SleepTimerInfo>;
+  cancelSleepTimer(): Promise<SleepTimerInfo>;
+  getSleepTimer(): Promise<SleepTimerInfo>;
+
+  /** Opens Android's share screen with the song file. */
+  shareSong(
+    id: string,
+    mimeType: string | null,
+    title: string,
+  ): Promise<boolean>;
 
   // Equalizer (each setter returns the updated info)
   getEqualizer(): Promise<EqualizerInfo>;

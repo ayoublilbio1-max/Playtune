@@ -11,10 +11,20 @@ type Props = {
   durationMs: number;
   isPlaying: boolean;
   onSeek: (positionMs: number) => void;
+  /** Thumb colour (white by default). */
+  thumbColor?: string;
+  thickness?: number;
 };
 
 /** Song progress: drag with the finger or tap a spot. The time follows the finger while dragging. */
-export function SeekBar({ positionMs, durationMs, isPlaying, onSeek }: Props) {
+export function SeekBar({
+  positionMs,
+  durationMs,
+  isPlaying,
+  onSeek,
+  thumbColor,
+  thickness = 4,
+}: Props) {
   const colors = useTheme();
   const [dragMs, setDragMs] = useState<number | null>(null);
   const ratio = durationMs > 0 ? Math.min(1, positionMs / durationMs) : 0;
@@ -25,11 +35,11 @@ export function SeekBar({ positionMs, durationMs, isPlaying, onSeek }: Props) {
         value={ratio}
         smoothMs={isPlaying && dragMs === null ? 520 : 0}
         step={0.003}
-        thickness={4}
-        thumbSize={13}
+        thickness={thickness}
+        thumbSize={thickness + 9}
         activeColor={colors.accent}
         inactiveColor={colors.surfaceRaised}
-        thumbColor={colors.white}
+        thumbColor={thumbColor ?? colors.white}
         onValueChange={(r) => setDragMs(r * durationMs)}
         onSlidingComplete={(r) => {
           setDragMs(null);

@@ -18,20 +18,20 @@ import { SongRow } from "../../components/SongRow";
 import { SongListSkeleton } from "../../components/SongRowSkeleton";
 import { showToast, Toast } from "../../components/Toast";
 import {
-    formatTotalDuration,
-    playSongs,
-    type EngineSong,
+  formatTotalDuration,
+  playSongs,
+  type EngineSong,
 } from "../../engine/engine";
 import { usePlaylistCover } from "../../hooks/use-artwork";
 import { useTheme } from "../../hooks/use-theme";
 import { initLibrary, useLibrary } from "../../store/library";
 import { usePlayer } from "../../store/player";
 import {
-    deletePlaylist,
-    loadPlaylists,
-    removeSongFromPlaylist,
-    renamePlaylist,
-    usePlaylists,
+  deletePlaylist,
+  loadPlaylists,
+  removeSongFromPlaylist,
+  renamePlaylist,
+  usePlaylists,
 } from "../../store/playlists";
 
 const COVER_SIZE = 200;
@@ -118,7 +118,12 @@ export default function PlaylistScreen() {
           transition={150}
         />
       ) : (
-        <ArtworkPlaceholder width={COVER_SIZE} radius={24} iconScale={0.36} />
+        <ArtworkPlaceholder
+          width={COVER_SIZE}
+          radius={24}
+          iconScale={0.36}
+          icon={playlist?.kind === "liked" ? "heart" : "musical-note"}
+        />
       )}
       <AppText
         variant="title"
@@ -178,7 +183,7 @@ export default function PlaylistScreen() {
     >
       <ScreenHeader
         right={
-          playlist ? (
+          playlist && playlist.kind !== "liked" ? (
             <IconButton
               name="ellipsis-vertical"
               size={20}

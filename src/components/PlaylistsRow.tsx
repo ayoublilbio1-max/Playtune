@@ -14,9 +14,15 @@ type Props = {
 
 type Item =
   | { kind: "new" }
-  | { kind: "playlist"; id: number; name: string; songIds: string[] };
+  | {
+      kind: "playlist";
+      id: number;
+      name: string;
+      liked: boolean;
+      songIds: string[];
+    };
 
-/** Horizontal row: "New playlist" card, then the user's playlists (newest first). */
+/** Horizontal row: "New playlist" card, "Liked songs", then the user's playlists (newest first). */
 export function PlaylistsRow({ onCreate, onOpen, onPlay }: Props) {
   const playlists = usePlaylists((s) => s.playlists);
   const byId = useLibrary((s) => s.byId);
@@ -28,6 +34,7 @@ export function PlaylistsRow({ onCreate, onOpen, onPlay }: Props) {
         kind: "playlist" as const,
         id: p.id,
         name: p.name,
+        liked: p.kind === "liked",
         // Songs deleted from the phone are not counted or shown.
         songIds: p.songIds.filter((id) => byId.has(id)),
       })),
@@ -39,11 +46,6 @@ export function PlaylistsRow({ onCreate, onOpen, onPlay }: Props) {
     <View style={styles.wrap}>
       <View style={styles.header}>
         <AppText variant="heading">Playlists</AppText>
-        {playlists.length > 0 ? (
-          <AppText variant="caption" muted>
-            {playlists.length}
-          </AppText>
-        ) : null}
       </View>
       <FlatList
         horizontal
@@ -56,6 +58,7 @@ export function PlaylistsRow({ onCreate, onOpen, onPlay }: Props) {
             <PlaylistCard
               id={item.id}
               name={item.name}
+              liked={item.liked}
               songIds={item.songIds}
               onOpen={onOpen}
               onPlay={onPlay}

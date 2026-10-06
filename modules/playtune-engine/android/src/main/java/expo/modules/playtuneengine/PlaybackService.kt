@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
@@ -48,6 +51,10 @@ class PlaybackService : MediaSessionService() {
     const val CMD_REPEAT = "playtune.REPEAT"
     const val CMD_CLOSE = "playtune.CLOSE"
 
+    /** Sleep timer: the music fades out during the last 10 seconds, then pauses. */
+    private const val SLEEP_FADE_MS = 10_000L
+    private const val SLEEP_TICK_MS = 100L
+
     /** Same-process access for the equalizer. Set while the service is alive. */
     @Volatile
     var instance: PlaybackService? = null
@@ -56,6 +63,10 @@ class PlaybackService : MediaSessionService() {
 
   private var session: MediaSession? = null
   private var errorStreak = 0
+
+  // Sleep timer (runs here, in the background service, so it works with the screen off / app closed).
+  private val handler = Handler(Looper.getMainLooper())
+  private var sleepEndAt = 0L // SystemClock.elapsedRealtime(), 0 = no timer
 
   lateinit var equalizer: EqualizerManager
     private set
@@ -115,6 +126,8 @@ class PlaybackService : MediaSessionService() {
 
   override fun onDestroy() {
     Log.d(TAG, "[service] destroyed")
+    handler.removeCallbacks(sleepTick)
+    sleepEndAt = 0L
     session?.let { s ->
       saveSession(s.player)
       s.player.removeListener(playerListener)
@@ -141,6 +154,53 @@ class PlaybackService : MediaSessionService() {
       intent,
       PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
     )
+  }
+
+  // ---------- Sleep timer ----------
+
+  /** Starts (or restarts) the sleep timer. */
+  fun startSleepTimer(durationMs: Long) {
+    handler.removeCallbacks(sleepTick)
+    session?.player?.volume = 1f
+    val duration = durationMs.coerceAtLeast(1_000L)
+    sleepEndAt = SystemClock.elapsedRealtime() + duration
+    // Wake up when the fade must start (or right away for a very short timer).
+    handler.postDelayed(sleepTick, (duration - SLEEP_FADE_MS).coerceAtLeast(0L))
+    Log.d(TAG, "[sleep] timer set — stops in ${duration / 1000}s")
+  }
+
+  fun cancelSleepTimer() {
+    if (sleepEndAt == 0L) return
+    handler.removeCallbacks(sleepTick)
+    sleepEndAt = 0L
+    session?.player?.volume = 1f
+    Log.d(TAG, "[sleep] timer cancelled")
+  }
+
+  /** Time left in ms, or -1 when no timer is running. */
+  fun sleepRemainingMs(): Long =
+    if (sleepEndAt == 0L) -1L else (sleepEndAt - SystemClock.elapsedRealtime()).coerceAtLeast(0L)
+
+  /** Runs every 100 ms during the last 10 seconds: lowers the volume, then pauses. */
+  private val sleepTick: Runnable = object : Runnable {
+    override fun run() {
+      val player = session?.player
+      val remaining = sleepEndAt - SystemClock.elapsedRealtime()
+      if (player == null || sleepEndAt == 0L) {
+        sleepEndAt = 0L
+        return
+      }
+      if (remaining <= 0L) {
+        player.pause()
+        player.volume = 1f
+        sleepEndAt = 0L
+        saveSession(player)
+        Log.d(TAG, "[sleep] time is up — music paused")
+        return
+      }
+      player.volume = (remaining.toFloat() / SLEEP_FADE_MS.toFloat()).coerceIn(0f, 1f)
+      handler.postDelayed(this, SLEEP_TICK_MS)
+    }
   }
 
   /**

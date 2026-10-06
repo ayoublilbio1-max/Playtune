@@ -18,6 +18,8 @@ type Props = {
   name: string;
   /** Songs that still exist on the phone, in playlist order. */
   songIds: string[];
+  /** The built-in "Liked songs" (heart placeholder). */
+  liked?: boolean;
   onOpen: (id: number) => void;
   onPlay: (id: number) => void;
 };
@@ -27,6 +29,7 @@ export const PlaylistCard = memo(function PlaylistCard({
   id,
   name,
   songIds,
+  liked = false,
   onOpen,
   onPlay,
 }: Props) {
@@ -55,6 +58,7 @@ export const PlaylistCard = memo(function PlaylistCard({
           width={CARD_WIDTH}
           height={CARD_HEIGHT}
           iconScale={0.3}
+          icon={liked ? "heart" : "musical-note"}
           style={StyleSheet.absoluteFill}
         />
       )}

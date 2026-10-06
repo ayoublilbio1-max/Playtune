@@ -94,8 +94,23 @@ export type EngineErrorEvent = {
   mediaId: string | null;
 };
 
+/** Phone media volume (steps, e.g. 0–15). */
+export type VolumeInfo = {
+  volume: number;
+  min: number;
+  max: number;
+  /** true on phones where the volume can't be changed by apps */
+  fixed: boolean;
+};
+
+export type SleepTimerInfo = {
+  active: boolean;
+  remainingMs: number;
+};
+
 export type PlaytuneEngineEvents = {
   onPlayerState: (state: PlayerState) => void;
   onTrackChange: (event: TrackChangeEvent) => void;
   onError: (event: EngineErrorEvent) => void;
+  onVolumeChange: (info: VolumeInfo) => void;
 };

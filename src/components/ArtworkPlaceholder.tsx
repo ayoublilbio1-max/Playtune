@@ -9,8 +9,10 @@ type Props = {
   width: number;
   height?: number;
   radius?: number;
-  /** Note size relative to the shorter side. */
+  /** Icon size relative to the shorter side. */
   iconScale?: number;
+  /** Music note by default; "heart" for Liked songs. */
+  icon?: "musical-note" | "heart";
   style?: StyleProp<ViewStyle>;
 };
 
@@ -20,6 +22,7 @@ export function ArtworkPlaceholder({
   height = width,
   radius = 0,
   iconScale = 0.42,
+  icon = "musical-note",
   style,
 }: Props) {
   const colors = useTheme();
@@ -51,7 +54,7 @@ export function ArtworkPlaceholder({
       </Svg>
       <View style={styles.center}>
         <Ionicons
-          name="musical-note"
+          name={icon}
           size={Math.round(Math.min(width, height) * iconScale)}
           color={colors.white}
         />

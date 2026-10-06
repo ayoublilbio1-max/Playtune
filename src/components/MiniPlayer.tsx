@@ -1,10 +1,10 @@
 import * as Haptics from "expo-haptics";
-import { router, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { router } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { displayArtist, PlaytuneEngine, stopToStart } from "../engine/engine";
+import { displayArtist, PlaytuneEngine } from "../engine/engine";
+import { usePlaybackProgress } from "../hooks/use-playback-progress";
 import { useTheme } from "../hooks/use-theme";
 import { useLibrary } from "../store/library";
 import { usePlayer } from "../store/player";
@@ -21,74 +21,22 @@ const DISC_SIZE = 42; // = title line (21) + artist line (18) + small gap
 /**
  * The playback box at the bottom of the library screens:
  * disc + title/artist, seek bar, and Loop · Back · Play/Pause · Next · Stop.
+ * Tap the title to open the Player screen.
  */
 export function MiniPlayer() {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
 
   const mediaId = usePlayer((s) => s.mediaId);
-  const isPlaying = usePlayer((s) => s.isPlaying);
   const repeatMode = usePlayer((s) => s.repeatMode);
   const queueLength = usePlayer((s) => s.queueLength);
-  const statePosition = usePlayer((s) => s.positionMs);
-  const stateDuration = usePlayer((s) => s.durationMs);
   const song = useLibrary((s) => (mediaId ? s.byId.get(mediaId) : undefined));
-
-  const [progress, setProgress] = useState({ positionMs: 0, durationMs: 0 });
-  const [resetKey, setResetKey] = useState(0);
-  const [focused, setFocused] = useState(true);
-  const ignorePollsUntil = useRef(0);
-
-  // Home stays mounted under other screens: only the visible mini player polls and spins.
-  useFocusEffect(
-    useCallback(() => {
-      setFocused(true);
-      return () => setFocused(false);
-    }, []),
-  );
-
-  // Position from player events (track change, pause, seek…).
-  useEffect(() => {
-    setProgress({ positionMs: statePosition, durationMs: stateDuration });
-  }, [statePosition, stateDuration, mediaId]);
-
-  // While playing, ask the engine for the position twice per second.
-  useEffect(() => {
-    if (!isPlaying || !focused) return;
-    let alive = true;
-    const tick = () => {
-      PlaytuneEngine.getProgress()
-        .then((p) => {
-          if (!alive || Date.now() < ignorePollsUntil.current) return;
-          setProgress({ positionMs: p.positionMs, durationMs: p.durationMs });
-        })
-        .catch(() => {});
-    };
-    tick();
-    const id = setInterval(tick, 500);
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
-  }, [isPlaying, focused, mediaId]);
+  const { positionMs, durationMs, isPlaying, focused, resetKey, seekTo, stop } =
+    usePlaybackProgress();
 
   if (queueLength === 0) return null;
 
   const loopOn = repeatMode === "one";
-
-  const onSeek = (ms: number) => {
-    ignorePollsUntil.current = Date.now() + 700;
-    setProgress((p) => ({ ...p, positionMs: ms }));
-    PlaytuneEngine.seekTo(ms).catch(() => {});
-  };
-
-  const onStop = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    ignorePollsUntil.current = Date.now() + 700;
-    setProgress((p) => ({ ...p, positionMs: 0 }));
-    setResetKey((k) => k + 1);
-    stopToStart();
-  };
 
   const onLoop = () => {
     const next = loopOn ? "off" : "one";
@@ -124,10 +72,10 @@ export function MiniPlayer() {
       </Pressable>
 
       <SeekBar
-        positionMs={progress.positionMs}
-        durationMs={progress.durationMs}
+        positionMs={positionMs}
+        durationMs={durationMs}
         isPlaying={isPlaying}
-        onSeek={onSeek}
+        onSeek={seekTo}
       />
 
       <View style={styles.controls}>
@@ -166,7 +114,12 @@ export function MiniPlayer() {
           size={22}
           color={colors.textMuted}
           accessibilityLabel="Stop"
-          onPress={onStop}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+              () => {},
+            );
+            stop();
+          }}
         />
       </View>
     </View>

@@ -1,9 +1,14 @@
 package expo.modules.playtuneengine
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.ClipData
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -47,6 +52,8 @@ class PlaytuneEngineModule : Module() {
   private val mainHandler = Handler(Looper.getMainLooper())
   private val mainExecutor = Executor { mainHandler.post(it) }
 
+  private var volumeReceiver: BroadcastReceiver? = null
+
   private var controller: MediaController? = null
   private var controllerFuture: ListenableFuture<MediaController>? = null
   private val waiting = mutableListOf<(MediaController?) -> Unit>()
@@ -57,9 +64,14 @@ class PlaytuneEngineModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("PlaytuneEngine")
 
-    Events("onPlayerState", "onTrackChange", "onError")
+    Events("onPlayerState", "onTrackChange", "onError", "onVolumeChange")
+
+    OnCreate {
+      registerVolumeReceiver()
+    }
 
     OnDestroy {
+      unregisterVolumeReceiver()
       mainHandler.post { releaseController() }
     }
 
@@ -223,6 +235,72 @@ class PlaytuneEngineModule : Module() {
       }
     }.runOnQueue(Queues.MAIN)
 
+    // ---------- Phone media volume ----------
+
+    AsyncFunction("getVolume") { ->
+      registerVolumeReceiver()
+      volumeInfo()
+    }
+
+    // Flags 0 = change the volume without showing the phone's volume bar.
+    AsyncFunction("setVolume") { index: Int ->
+      val am = audioManager()
+      val max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+      val min = minVolume(am)
+      try {
+        am.setStreamVolume(AudioManager.STREAM_MUSIC, index.coerceIn(min, max), 0)
+      } catch (e: SecurityException) {
+        Log.w(tag, "[volume] not allowed to change volume: ${e.message}")
+      }
+      volumeInfo()
+    }
+
+    // ---------- Sleep timer (runs in the playback service) ----------
+
+    AsyncFunction("startSleepTimer") { durationMs: Double, promise: Promise ->
+      withController(promise) {
+        PlaybackService.instance?.startSleepTimer(durationMs.toLong())
+        sleepInfo()
+      }
+    }.runOnQueue(Queues.MAIN)
+
+    AsyncFunction("cancelSleepTimer") { promise: Promise ->
+      withController(promise) {
+        PlaybackService.instance?.cancelSleepTimer()
+        sleepInfo()
+      }
+    }.runOnQueue(Queues.MAIN)
+
+    AsyncFunction("getSleepTimer") { promise: Promise ->
+      withController(promise) { sleepInfo() }
+    }.runOnQueue(Queues.MAIN)
+
+    // ---------- Share ----------
+
+    /** Opens Android's share screen with the song file (WhatsApp, Bluetooth, Drive…). */
+    AsyncFunction("shareSong") { id: String, mimeType: String?, title: String ->
+      val songId = id.toLongOrNull() ?: throw CodedException("ERR_SHARE", "Unknown song", null)
+      val uri = SongScanner.songUri(songId)
+      val send = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType ?: "audio/*"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        clipData = ClipData.newRawUri(title, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+      }
+      val chooser = Intent.createChooser(send, title).apply {
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+      }
+      val activity = appContext.currentActivity
+      if (activity != null) {
+        activity.startActivity(chooser)
+      } else {
+        chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(chooser)
+      }
+      Log.d(tag, "[share] share sheet opened for song $id")
+      true
+    }.runOnQueue(Queues.MAIN)
+
     // ---------- Equalizer ----------
 
     AsyncFunction("getEqualizer") { promise: Promise ->
@@ -266,6 +344,68 @@ class PlaytuneEngineModule : Module() {
   }
 
   // ---------- Helpers ----------
+
+  private fun audioManager(): AudioManager =
+    context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+  private fun minVolume(am: AudioManager): Int =
+    if (Build.VERSION.SDK_INT >= 28) am.getStreamMinVolume(AudioManager.STREAM_MUSIC) else 0
+
+  private fun volumeInfo(): Map<String, Any?> {
+    val am = audioManager()
+    return mapOf<String, Any?>(
+      "volume" to am.getStreamVolume(AudioManager.STREAM_MUSIC),
+      "min" to minVolume(am),
+      "max" to am.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+      "fixed" to am.isVolumeFixed
+    )
+  }
+
+  private fun sleepInfo(): Map<String, Any?> {
+    val remaining = PlaybackService.instance?.sleepRemainingMs() ?: -1L
+    return mapOf<String, Any?>(
+      "active" to (remaining >= 0L),
+      "remainingMs" to (if (remaining >= 0L) remaining.toDouble() else 0.0)
+    )
+  }
+
+  /** Follows the phone's volume buttons so the app's volume arc moves with them. */
+  private fun registerVolumeReceiver() {
+    if (volumeReceiver != null) return
+    val ctx = appContext.reactContext?.applicationContext ?: return
+    val receiver = object : BroadcastReceiver() {
+      override fun onReceive(c: Context?, intent: Intent?) {
+        val stream = intent?.getIntExtra("android.media.EXTRA_VOLUME_STREAM_TYPE", -1) ?: -1
+        if (stream != AudioManager.STREAM_MUSIC) return
+        try {
+          this@PlaytuneEngineModule.sendEvent("onVolumeChange", volumeInfo())
+        } catch (e: Exception) {
+          Log.w(tag, "[volume] event failed: ${e.message}")
+        }
+      }
+    }
+    val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
+    try {
+      if (Build.VERSION.SDK_INT >= 33) {
+        ctx.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+      } else {
+        ctx.registerReceiver(receiver, filter)
+      }
+      volumeReceiver = receiver
+      Log.d(tag, "[volume] listening to volume buttons")
+    } catch (e: Exception) {
+      Log.w(tag, "[volume] could not listen to volume changes: ${e.message}")
+    }
+  }
+
+  private fun unregisterVolumeReceiver() {
+    val receiver = volumeReceiver ?: return
+    try {
+      appContext.reactContext?.applicationContext?.unregisterReceiver(receiver)
+    } catch (_: Exception) {
+    }
+    volumeReceiver = null
+  }
 
   private fun hasAudioPermission(): Boolean {
     val permission =
