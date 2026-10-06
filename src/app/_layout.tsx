@@ -1,12 +1,15 @@
+import { NavigationBar, setVisibilityAsync } from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { useTheme } from "../hooks/use-theme";
+import { initPlayer } from "../store/player";
 
-// Keep the native splash until the first screen is ready, then fade it out.
+// Keep the native splash until Home knows what to show, then fade it out.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SplashScreen.setOptions({ duration: 300, fade: true });
 
@@ -16,19 +19,41 @@ export const unstable_settings = {
   initialRouteName: "index",
 };
 
+/**
+ * Hides the phone's ◁ ○ □ bar again (some phones show it after the app comes back from the background).
+ * The <NavigationBar hidden /> below hides it while the app runs; a swipe from the bottom edge shows it for a moment.
+ */
+function hideNavigationBar(reason: string) {
+  setVisibilityAsync("hidden")
+    .then(() => {
+      if (__DEV__) console.log(`[nav] navigation bar hidden (${reason})`);
+    })
+    .catch((e) => {
+      if (__DEV__)
+        console.log(`[nav] could not hide navigation bar — ${String(e)}`);
+    });
+}
+
 export default function RootLayout() {
   const colors = useTheme();
 
   useEffect(() => {
-    // Fonts are embedded in the app (expo-font plugin), so nothing loads at startup.
-    // Screens that load data can hide the splash themselves later; for now hide on mount.
-    const start = Date.now();
-    SplashScreen.hideAsync()
-      .then(() => {
-        if (__DEV__)
-          console.log(`[splash] hidden after ${Date.now() - start}ms`);
-      })
-      .catch(() => {});
+    initPlayer();
+
+    // Some phones show the bar again after the app comes back from the background.
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") hideNavigationBar("app active");
+    });
+
+    // Safety net: never leave the splash on screen.
+    const splashTimer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 3000);
+
+    return () => {
+      sub.remove();
+      clearTimeout(splashTimer);
+    };
   }, []);
 
   return (
@@ -36,6 +61,7 @@ export default function RootLayout() {
       style={{ flex: 1, backgroundColor: colors.background }}
     >
       <StatusBar style="light" />
+      <NavigationBar hidden />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -46,6 +72,18 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen
           name="player"
+          options={{ animation: "slide_from_bottom" }}
+        />
+        <Stack.Screen
+          name="equalizer"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="playlist/[id]"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="playlist/add-songs"
           options={{ animation: "slide_from_bottom" }}
         />
       </Stack>

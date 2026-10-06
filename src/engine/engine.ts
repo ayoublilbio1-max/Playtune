@@ -1,6 +1,10 @@
 import { PermissionsAndroid, Platform } from "react-native";
 
-import type { EngineSong, QueueItem } from "../../modules/playtune-engine";
+import type {
+  EngineSong,
+  EqualizerInfo,
+  QueueItem,
+} from "../../modules/playtune-engine";
 import PlaytuneEngine from "../../modules/playtune-engine";
 
 export * from "../../modules/playtune-engine/src/PlaytuneEngine.types";
@@ -65,10 +69,107 @@ export function toQueueItem(song: EngineSong): QueueItem {
   };
 }
 
+/** Replaces the queue with these songs and starts playing at `index`. */
+export async function playSongs(
+  songs: EngineSong[],
+  index: number,
+  source: string,
+): Promise<void> {
+  if (songs.length === 0) return;
+  const start = Date.now();
+  try {
+    await PlaytuneEngine.setQueue(songs.map(toQueueItem), index, 0, true);
+    if (__DEV__)
+      console.log(
+        `[queue] ${source}: ${songs.length} songs, start ${index}, in ${Date.now() - start}ms`,
+      );
+  } catch (e) {
+    if (__DEV__)
+      console.log(`[queue] ${source}: setQueue failed — ${String(e)}`);
+  }
+}
+
+/** Stop button: pause and go back to 0:00 (the queue and notification stay). */
+export async function stopToStart(): Promise<void> {
+  try {
+    await PlaytuneEngine.pause();
+    await PlaytuneEngine.seekTo(0);
+    if (__DEV__) console.log("[player] stopped and back to 0:00");
+  } catch (e) {
+    if (__DEV__) console.log(`[player] stop failed — ${String(e)}`);
+  }
+}
+
 export function formatTime(ms: number): string {
   if (!Number.isFinite(ms) || ms < 0) return "0:00";
   const total = Math.floor(ms / 1000);
-  const m = Math.floor(total / 60);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
+  if (h > 0)
+    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
+
+/** "1 h 12 min" / "38 min" — for playlist totals. */
+export function formatTotalDuration(ms: number): string {
+  const minutes = Math.round(ms / 60000);
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h} h ${m} min` : `${h} h`;
+}
+
+/**
+ * Some phones return broken equalizer preset names: each name keeps the leftover letters
+ * of the previous, longer name ("Danceical" = "Dance" + "ical" from "Classical").
+ * When a name has the same length as the previous raw name and ends with the same letters,
+ * those shared letters are leftovers, so they are cut.
+ * Example from a real phone: Danceical → Dance, Flateical → Flat, JazzHopetal → Jazz.
+ */
+export function cleanPresetNames(raw: string[]): string[] {
+  const cleaned: string[] = [];
+  let previousRaw = "";
+  for (const name of raw) {
+    let result = name;
+    if (
+      previousRaw &&
+      name.length === previousRaw.length &&
+      name !== previousRaw
+    ) {
+      let end = name.length;
+      while (end > 0 && name[end - 1] === previousRaw[end - 1]) end--;
+      if (end > 0 && end < name.length) result = name.slice(0, end);
+    }
+    cleaned.push(result.trim());
+    previousRaw = name;
+  }
+  return cleaned;
+}
+
+/** Equalizer info with readable preset names. */
+function withCleanNames(info: EqualizerInfo): EqualizerInfo {
+  if (!info.presets) return info;
+  const clean = cleanPresetNames(info.presets);
+  if (__DEV__ && clean.join("|") !== info.presets.join("|")) {
+    console.log(
+      `[eq] preset names cleaned: ${info.presets.join(", ")} → ${clean.join(", ")}`,
+    );
+  }
+  return { ...info, presets: clean };
+}
+
+// Equalizer wrappers. (Kept here so screens never call engine methods whose names start with "use".)
+export const equalizer = {
+  get: async () => withCleanNames(await PlaytuneEngine.getEqualizer()),
+  setEnabled: async (enabled: boolean) =>
+    withCleanNames(await PlaytuneEngine.setEqualizerEnabled(enabled)),
+  setBand: async (band: number, levelMb: number) =>
+    withCleanNames(await PlaytuneEngine.setBandLevel(band, levelMb)),
+  applyPreset: async (index: number) =>
+    withCleanNames(await PlaytuneEngine.usePreset(index)),
+  setBass: async (strength: number) =>
+    withCleanNames(await PlaytuneEngine.setBassBoost(strength)),
+  setVirtualizer: async (strength: number) =>
+    withCleanNames(await PlaytuneEngine.setVirtualizer(strength)),
+};

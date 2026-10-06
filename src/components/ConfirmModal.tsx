@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { useTheme } from "../hooks/use-theme";
 import { AppText } from "./AppText";
+import { Overlay } from "./Overlay";
 
 type Props = {
   visible: boolean;
@@ -18,7 +19,10 @@ type Props = {
   onCancel: () => void;
 };
 
-/** Themed replacement for the phone's native Alert. Never use Alert for confirmations. */
+/**
+ * Themed replacement for the phone's native Alert. Never use Alert for confirmations.
+ * Render it as the last child of the screen's root view.
+ */
 export function ConfirmModal({
   visible,
   title,
@@ -34,89 +38,60 @@ export function ConfirmModal({
   const confirmColor = destructive ? colors.danger : colors.accent;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
-    >
-      <Pressable
-        style={[styles.backdrop, { backgroundColor: colors.overlay }]}
-        onPress={onCancel}
-      >
-        <Pressable
-          style={[
-            styles.card,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-          onPress={() => {}}
+    <Overlay visible={visible} onClose={onCancel} placement="center">
+      <View style={styles.content}>
+        <View
+          style={[styles.iconWrap, { backgroundColor: confirmColor + "22" }]}
         >
-          <View
-            style={[styles.iconWrap, { backgroundColor: confirmColor + "22" }]}
-          >
-            <Ionicons name={icon} size={26} color={confirmColor} />
-          </View>
+          <Ionicons name={icon} size={26} color={confirmColor} />
+        </View>
 
-          <AppText variant="heading" align="center">
-            {title}
+        <AppText variant="heading" align="center">
+          {title}
+        </AppText>
+        {message ? (
+          <AppText variant="body" muted align="center" style={styles.message}>
+            {message}
           </AppText>
-          {message ? (
-            <AppText variant="body" muted align="center" style={styles.message}>
-              {message}
-            </AppText>
-          ) : null}
+        ) : null}
 
-          <View style={styles.row}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.button,
-                {
-                  backgroundColor: colors.surfaceRaised,
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}
-              onPress={onCancel}
-            >
-              <AppText weight="semibold">{cancelLabel}</AppText>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.button,
-                { backgroundColor: confirmColor, opacity: pressed ? 0.8 : 1 },
-              ]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
-                  () => {},
-                );
-                onConfirm();
-              }}
-            >
-              <AppText weight="semibold" color={colors.white}>
-                {confirmLabel}
-              </AppText>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        <View style={styles.row}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              {
+                backgroundColor: colors.surfaceRaised,
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+            onPress={onCancel}
+          >
+            <AppText weight="semibold">{cancelLabel}</AppText>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              { backgroundColor: confirmColor, opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
+                () => {},
+              );
+              onConfirm();
+            }}
+          >
+            <AppText weight="semibold" color={colors.white}>
+              {confirmLabel}
+            </AppText>
+          </Pressable>
+        </View>
+      </View>
+    </Overlay>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 28,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 360,
-    borderRadius: 24,
-    borderWidth: 1,
-    paddingHorizontal: 22,
-    paddingTop: 24,
-    paddingBottom: 18,
+  content: {
     alignItems: "center",
   },
   iconWrap: {

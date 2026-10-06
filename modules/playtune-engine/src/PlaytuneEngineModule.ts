@@ -1,15 +1,15 @@
 import { NativeModule, requireNativeModule } from "expo";
 
 import type {
-    EngineInfo,
-    EngineSong,
-    EqualizerInfo,
-    LastSession,
-    PlayerState,
-    PlaytuneEngineEvents,
-    Progress,
-    QueueItem,
-    RepeatMode,
+  EngineInfo,
+  EngineSong,
+  EqualizerInfo,
+  LastSession,
+  PlayerState,
+  PlaytuneEngineEvents,
+  Progress,
+  QueueItem,
+  RepeatMode,
 } from "./PlaytuneEngine.types";
 
 declare class PlaytuneEngineModule extends NativeModule<PlaytuneEngineEvents> {
@@ -44,7 +44,6 @@ declare class PlaytuneEngineModule extends NativeModule<PlaytuneEngineEvents> {
   seekTo(positionMs: number): Promise<void>;
   stop(): Promise<void>;
   setRepeatMode(mode: RepeatMode): Promise<void>;
-  setShuffle(enabled: boolean): Promise<void>;
   getState(): Promise<PlayerState>;
   getProgress(): Promise<Progress>;
 

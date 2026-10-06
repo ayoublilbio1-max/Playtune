@@ -46,6 +46,12 @@
           "color": "#E401E3"
         }
       ],
+      [
+        "expo-navigation-bar",
+        {
+          "hidden": true
+        }
+      ],
       "expo-sqlite",
       "expo-sharing",
       "expo-asset",

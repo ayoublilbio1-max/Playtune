@@ -34,6 +34,8 @@ export const darkColors = {
   // Gradients (outer ring and inner disc of the logo)
   outerGradient: ["#F70AAE", "#E401E3", "#7C09F1", "#4AC4F4"] as const,
   innerGradient: ["#7C09F1", "#5C08F5", "#3D08F8", "#1C9EEF"] as const,
+  // Song / playlist without artwork (same colours as the notification placeholder)
+  placeholderGradient: ["#E401E3", "#7C09F1", "#19012B"] as const,
 };
 
 export type AppColors = typeof darkColors;

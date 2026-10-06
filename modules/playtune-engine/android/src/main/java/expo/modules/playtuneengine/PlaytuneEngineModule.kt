@@ -67,7 +67,7 @@ class PlaytuneEngineModule : Module() {
 
     Function("getEngineInfo") { ->
       mapOf<String, Any?>(
-        "engineVersion" to "1.0.0",
+        "engineVersion" to "1.1.0",
         "media3Version" to "1.10.0",
         "androidSdk" to Build.VERSION.SDK_INT
       )
@@ -203,17 +203,10 @@ class PlaytuneEngineModule : Module() {
 
     AsyncFunction("setRepeatMode") { mode: String, promise: Promise ->
       withController(promise) { c ->
-        c.repeatMode = when (mode) {
-          "all" -> Player.REPEAT_MODE_ALL
-          "one" -> Player.REPEAT_MODE_ONE
-          else -> Player.REPEAT_MODE_OFF
-        }
+        // Playtune has 2 loop states only: "one" (loop this song) or "off".
+        c.repeatMode = if (mode == "one") Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
         null
       }
-    }.runOnQueue(Queues.MAIN)
-
-    AsyncFunction("setShuffle") { enabled: Boolean, promise: Promise ->
-      withController(promise) { c -> c.shuffleModeEnabled = enabled; null }
     }.runOnQueue(Queues.MAIN)
 
     AsyncFunction("getState") { promise: Promise ->
@@ -316,11 +309,7 @@ class PlaytuneEngineModule : Module() {
     else -> "idle"
   }
 
-  private fun repeatName(mode: Int) = when (mode) {
-    Player.REPEAT_MODE_ALL -> "all"
-    Player.REPEAT_MODE_ONE -> "one"
-    else -> "off"
-  }
+  private fun repeatName(mode: Int) = if (mode == Player.REPEAT_MODE_ONE) "one" else "off"
 
   private fun transitionName(reason: Int) = when (reason) {
     Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> "auto"
@@ -334,7 +323,6 @@ class PlaytuneEngineModule : Module() {
     "playWhenReady" to p.playWhenReady,
     "state" to stateName(p.playbackState),
     "repeatMode" to repeatName(p.repeatMode),
-    "shuffle" to p.shuffleModeEnabled,
     "index" to p.currentMediaItemIndex,
     "mediaId" to p.currentMediaItem?.mediaId,
     "queueLength" to p.mediaItemCount,

@@ -29,7 +29,12 @@ import com.google.common.util.concurrent.ListenableFuture
  * - the lock-screen controls, headset and Bluetooth buttons,
  * - a foreground service while music plays, so it keeps going with the app closed.
  *
- * Extra notification buttons: Repeat (off → all → one) on the left, Close (✕) on the right.
+ * Extra notification buttons: Loop (off ↔ loop this song) and Close (✕).
+ * Both use SLOT_OVERFLOW: that is the slot Media3 turns into the system notification's
+ * custom actions (secondary slots are ignored there). Both use our own icons
+ * (ICON_UNDEFINED + custom icon), so the system can't swap them for a built-in one.
+ *
+ * Loop has 2 states only: off or loop the current song. Shuffle is not used in Playtune.
  *
  * Swiping the app away from recents: Media3's default keeps the service if music is playing
  * and stops it if paused, which is what we want, so onTaskRemoved is not overridden.
@@ -73,8 +78,10 @@ class PlaybackService : MediaSessionService() {
       .setWakeMode(C.WAKE_MODE_LOCAL)
       .build()
 
-    player.repeatMode = prefs.getInt("repeatMode", Player.REPEAT_MODE_OFF)
-    player.shuffleModeEnabled = prefs.getBoolean("shuffle", false)
+    // Only "off" or "loop one" exist in Playtune (an old saved "loop all" becomes off).
+    val savedRepeat = prefs.getInt("repeatMode", Player.REPEAT_MODE_OFF)
+    player.repeatMode = if (savedRepeat == Player.REPEAT_MODE_ONE) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+    player.shuffleModeEnabled = false
     player.addListener(playerListener)
 
     equalizer = EqualizerManager(this)
@@ -89,14 +96,19 @@ class PlaybackService : MediaSessionService() {
     Log.d(TAG, "[service] notification icon ${if (smallIcon != 0) "from app" else "Media3 default"}")
     setMediaNotificationProvider(notificationProvider)
 
+    // After Close (✕) the player is stopped (idle): never keep a notification for it.
+    setShowNotificationForIdlePlayer(MediaSessionService.SHOW_NOTIFICATION_FOR_IDLE_PLAYER_NEVER)
+
     session = MediaSession.Builder(this, player)
       .setCallback(SessionCallback())
       .setBitmapLoader(ArtworkBitmapLoader(this))
       .setSessionActivity(openPlayerIntent())
+      // Session-wide buttons: this is the list the system notification reads.
+      .setMediaButtonPreferences(buttons(player.repeatMode))
       .build()
 
     instance = this
-    Log.d(TAG, "[service] created — audioSession=${player.audioSessionId} repeat=${player.repeatMode} shuffle=${player.shuffleModeEnabled}")
+    Log.d(TAG, "[service] created — audioSession=${player.audioSessionId} repeat=${player.repeatMode}")
   }
 
   override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
@@ -131,25 +143,25 @@ class PlaybackService : MediaSessionService() {
     )
   }
 
-  /** The two extra notification buttons. The repeat icon follows the current mode. */
+  /**
+   * The two extra notification buttons, in this order: Loop first, Close second.
+   * The loop icon shows the current state: plain loop = off, loop with "1" = on.
+   */
   private fun buttons(repeatMode: Int): List<CommandButton> {
-    val repeatIcon = when (repeatMode) {
-      Player.REPEAT_MODE_ONE -> CommandButton.ICON_REPEAT_ONE
-      Player.REPEAT_MODE_ALL -> CommandButton.ICON_REPEAT_ALL
-      else -> CommandButton.ICON_REPEAT_OFF
-    }
-    val repeat = CommandButton.Builder(repeatIcon)
-      .setDisplayName("Repeat")
+    val loopOn = repeatMode == Player.REPEAT_MODE_ONE
+    val loop = CommandButton.Builder(CommandButton.ICON_UNDEFINED)
+      .setCustomIconResId(if (loopOn) R.drawable.ic_pt_repeat_one else R.drawable.ic_pt_repeat)
+      .setDisplayName(if (loopOn) "Loop on" else "Loop off")
       .setSessionCommand(SessionCommand(CMD_REPEAT, Bundle.EMPTY))
-      .setSlots(CommandButton.SLOT_BACK_SECONDARY)
+      .setSlots(CommandButton.SLOT_OVERFLOW)
       .build()
-    val close = CommandButton.Builder(CommandButton.ICON_STOP)
+    val close = CommandButton.Builder(CommandButton.ICON_UNDEFINED)
       .setCustomIconResId(R.drawable.ic_pt_close)
       .setDisplayName("Close")
       .setSessionCommand(SessionCommand(CMD_CLOSE, Bundle.EMPTY))
-      .setSlots(CommandButton.SLOT_FORWARD_SECONDARY)
+      .setSlots(CommandButton.SLOT_OVERFLOW)
       .build()
-    return listOf(repeat, close)
+    return listOf(loop, close)
   }
 
   /** Saves the queue, current song and position so the app can restore them after being killed. */
@@ -164,14 +176,22 @@ class PlaybackService : MediaSessionService() {
 
   private val playerListener = object : Player.Listener {
     override fun onRepeatModeChanged(repeatMode: Int) {
+      // Another controller (car, watch…) may ask for "loop all": Playtune has only "loop one".
+      if (repeatMode == Player.REPEAT_MODE_ALL) {
+        Log.d(TAG, "[service] repeat all requested — using loop one")
+        session?.player?.repeatMode = Player.REPEAT_MODE_ONE
+        return
+      }
       prefs().edit().putInt("repeatMode", repeatMode).apply()
       session?.setMediaButtonPreferences(buttons(repeatMode))
-      Log.d(TAG, "[service] repeat → $repeatMode")
+      Log.d(TAG, "[service] loop → ${if (repeatMode == Player.REPEAT_MODE_ONE) "one" else "off"}")
     }
 
     override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
-      prefs().edit().putBoolean("shuffle", shuffleModeEnabled).apply()
-      Log.d(TAG, "[service] shuffle → $shuffleModeEnabled")
+      if (shuffleModeEnabled) {
+        Log.d(TAG, "[service] shuffle requested by a controller — kept off")
+        session?.player?.shuffleModeEnabled = false
+      }
     }
 
     override fun onAudioSessionIdChanged(audioSessionId: Int) {
@@ -227,15 +247,18 @@ class PlaybackService : MediaSessionService() {
       when (customCommand.customAction) {
         CMD_REPEAT -> {
           val player = session.player
-          player.repeatMode = when (player.repeatMode) {
-            Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
-            Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
-            else -> Player.REPEAT_MODE_OFF
-          }
+          player.repeatMode =
+            if (player.repeatMode == Player.REPEAT_MODE_ONE) Player.REPEAT_MODE_OFF
+            else Player.REPEAT_MODE_ONE
         }
         CMD_CLOSE -> {
-          Log.d(TAG, "[service] close tapped — pausing and stopping")
-          saveSession(session.player)
+          Log.d(TAG, "[service] close tapped — stopping and removing the notification")
+          val player = session.player
+          saveSession(player)
+          player.pause()
+          // Idle player + SHOW_NOTIFICATION_FOR_IDLE_PLAYER_NEVER = notification removed.
+          // The queue and position are kept, so Play in the app continues from here.
+          player.stop()
           this@PlaybackService.pauseAllPlayersAndStopSelf()
         }
       }

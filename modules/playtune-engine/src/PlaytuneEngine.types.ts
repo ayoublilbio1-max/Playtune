@@ -1,4 +1,5 @@
-export type RepeatMode = "off" | "all" | "one";
+/** Playtune has 2 loop states: off, or loop the current song. */
+export type RepeatMode = "off" | "one";
 
 /** A song found by scanSongs(). Missing tags are null (the app shows "Unknown artist" etc.). */
 export type EngineSong = {
@@ -33,7 +34,6 @@ export type PlayerState = {
   playWhenReady: boolean;
   state: "idle" | "buffering" | "ready" | "ended";
   repeatMode: RepeatMode;
-  shuffle: boolean;
   index: number;
   mediaId: string | null;
   queueLength: number;
