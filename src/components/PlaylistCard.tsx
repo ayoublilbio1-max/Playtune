@@ -99,13 +99,13 @@ export const PlaylistCard = memo(function PlaylistCard({
             onPress={() => onPlay(id)}
             style={({ pressed }) => [
               styles.play,
-              { backgroundColor: colors.white, opacity: pressed ? 0.8 : 1 },
+              { backgroundColor: colors.accent, opacity: pressed ? 0.8 : 1 },
             ]}
           >
             <Ionicons
               name="play"
               size={16}
-              color={colors.background}
+              color={colors.white}
               style={styles.playIcon}
             />
           </Pressable>

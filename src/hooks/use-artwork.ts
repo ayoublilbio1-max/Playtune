@@ -63,6 +63,17 @@ export function useArtwork(
   return loaded.key === key ? loaded.uri : null;
 }
 
+/**
+ * Deletes the saved artwork files (engine) and forgets the uris kept in memory.
+ * Pictures are made again the next time a song or playlist is shown. Returns the number of files deleted.
+ */
+export async function clearArtworkCache(): Promise<number> {
+  const count = await PlaytuneEngine.clearArtworkCache();
+  cache.clear();
+  if (__DEV__) console.log(`[artwork] cache cleared — ${count} files`);
+  return count;
+}
+
 /** Playlist cover: the artwork of the first song (in playlist order) that has one. Checks up to 30 songs. */
 export function usePlaylistCover(
   songIds: string[],

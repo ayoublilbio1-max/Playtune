@@ -15,10 +15,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AddToPlaylistSheet } from "../components/AddToPlaylistSheet";
 import { AppText } from "../components/AppText";
+import { IconButton } from "../components/IconButton";
 import { LibraryToolbar } from "../components/LibraryToolbar";
 import { MINI_PLAYER_SPACE, MiniPlayer } from "../components/MiniPlayer";
 import { PlaylistsRow } from "../components/PlaylistsRow";
 import { PromptModal } from "../components/PromptModal";
+import { SideMenu } from "../components/SideMenu";
 import { SongRow } from "../components/SongRow";
 import { SongListSkeleton } from "../components/SongRowSkeleton";
 import { SortSheet } from "../components/SortSheet";
@@ -40,6 +42,8 @@ import {
   getPlaylists,
   loadPlaylists,
 } from "../store/playlists";
+
+let splashHidden = false;
 
 type Prompt =
   | null
@@ -63,15 +67,17 @@ export default function HomeScreen() {
   const [sortOpen, setSortOpen] = useState(false);
   const [addSong, setAddSong] = useState<EngineSong | null>(null);
   const [prompt, setPrompt] = useState<Prompt>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     initLibrary();
     loadPlaylists();
   }, []);
 
-  // Hide the splash as soon as we know what to show (songs, permission screen or error).
+  // Hide the splash once, as soon as we know what to show (songs, permission screen or error).
   useEffect(() => {
-    if (status === "checking") return;
+    if (status === "checking" || splashHidden) return;
+    splashHidden = true;
     SplashScreen.hideAsync()
       .then(() => {
         if (__DEV__) console.log(`[splash] hidden (library: ${status})`);
@@ -178,6 +184,12 @@ export default function HomeScreen() {
     >
       <View style={styles.header}>
         <AppText variant="title">Playtune</AppText>
+        <IconButton
+          name="menu"
+          size={28}
+          accessibilityLabel="Menu"
+          onPress={() => setMenuOpen(true)}
+        />
       </View>
 
       {status === "ready" ? (
@@ -280,6 +292,7 @@ export default function HomeScreen() {
         onSubmit={onPromptSubmit}
         onCancel={() => setPrompt(null)}
       />
+      <SideMenu visible={menuOpen} onClose={() => setMenuOpen(false)} />
       <Toast />
     </View>
   );
@@ -290,9 +303,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingLeft: 20,
+    paddingRight: 8,
+    paddingTop: 4,
+    paddingBottom: 8,
   },
   sectionLabel: {
     paddingHorizontal: 20,

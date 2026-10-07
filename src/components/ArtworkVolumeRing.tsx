@@ -2,19 +2,19 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import {
-    useCallback,
-    useEffect,
-    useId,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-    useAnimatedProps,
-    useSharedValue,
-    withTiming,
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { scheduleOnRN } from "react-native-worklets";
@@ -233,6 +233,7 @@ export function ArtworkVolumeRing({
   }));
 
   const muted = !!info && info.volume <= info.min;
+  const atMax = !!info && info.volume >= info.max;
 
   const onMutePress = () => {
     if (!info || disabled) return;
@@ -325,9 +326,11 @@ export function ArtworkVolumeRing({
           )}
         </Animated.View>
 
+        {/* Muted colour; magenta while pressed, or when the state is on (muted / full volume). */}
         <Pressable
           hitSlop={12}
           onPress={onMutePress}
+          accessibilityLabel={muted ? "Unmute" : "Mute"}
           style={[
             styles.icon,
             {
@@ -337,15 +340,18 @@ export function ArtworkVolumeRing({
             },
           ]}
         >
-          <Ionicons
-            name={muted ? "volume-mute" : "volume-mute-outline"}
-            size={22}
-            color={colors.accent}
-          />
+          {({ pressed }) => (
+            <Ionicons
+              name={muted ? "volume-mute" : "volume-mute-outline"}
+              size={22}
+              color={muted || pressed ? colors.accent : colors.textMuted}
+            />
+          )}
         </Pressable>
         <Pressable
           hitSlop={12}
           onPress={onLouderPress}
+          accessibilityLabel="Louder"
           style={[
             styles.icon,
             {
@@ -355,11 +361,13 @@ export function ArtworkVolumeRing({
             },
           ]}
         >
-          <Ionicons
-            name="volume-high-outline"
-            size={22}
-            color={colors.accent}
-          />
+          {({ pressed }) => (
+            <Ionicons
+              name={atMax ? "volume-high" : "volume-high-outline"}
+              size={22}
+              color={atMax || pressed ? colors.accent : colors.textMuted}
+            />
+          )}
         </Pressable>
       </View>
     </GestureDetector>

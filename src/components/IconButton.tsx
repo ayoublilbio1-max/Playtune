@@ -1,11 +1,11 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import {
-    Pressable,
-    StyleSheet,
-    View,
-    type StyleProp,
-    type ViewStyle,
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 
 import { useTheme } from "../hooks/use-theme";
@@ -19,6 +19,8 @@ type Props = IconSpec & {
   onPress: () => void;
   size?: number;
   color?: string;
+  /** Icon colour while the finger is on the button (e.g. muted icon that lights up on tap). */
+  pressedColor?: string;
   /** Square/circle box behind the icon. */
   box?: "none" | "soft" | "accent";
   boxSize?: number;
@@ -36,6 +38,7 @@ export function IconButton(props: Props) {
     onPress,
     size = 24,
     color,
+    pressedColor,
     box = "none",
     boxSize = 44,
     round = false,
@@ -71,31 +74,44 @@ export function IconButton(props: Props) {
       style={({ pressed }) => [
         styles.base,
         boxStyle ?? { minWidth: size + 16, minHeight: size + 16 },
-        { opacity: disabled ? 0.35 : pressed ? 0.6 : 1 },
+        { opacity: disabled ? 0.35 : pressed && !pressedColor ? 0.6 : 1 },
         style,
       ]}
     >
-      {props.family === "mci" ? (
-        <MaterialCommunityIcons
-          name={props.name}
-          size={size}
-          color={iconColor}
-        />
-      ) : (
-        <Ionicons name={props.name} size={size} color={iconColor} />
+      {({ pressed }) => (
+        <>
+          {props.family === "mci" ? (
+            <MaterialCommunityIcons
+              name={props.name}
+              size={size}
+              color={pressed && pressedColor ? pressedColor : iconColor}
+            />
+          ) : (
+            <Ionicons
+              name={props.name}
+              size={size}
+              color={pressed && pressedColor ? pressedColor : iconColor}
+            />
+          )}
+          {badge ? (
+            <View
+              style={[
+                styles.badge,
+                { backgroundColor: colors.accent, borderColor: colors.surface },
+              ]}
+            >
+              <AppText
+                size={9}
+                weight="bold"
+                color={colors.white}
+                style={styles.badgeText}
+              >
+                {badge}
+              </AppText>
+            </View>
+          ) : null}
+        </>
       )}
-      {badge ? (
-        <View
-          style={[
-            styles.badge,
-            { backgroundColor: colors.accent, borderColor: colors.surface },
-          ]}
-        >
-          <AppText size={9} weight="bold" style={styles.badgeText}>
-            {badge}
-          </AppText>
-        </View>
-      ) : null}
     </Pressable>
   );
 }

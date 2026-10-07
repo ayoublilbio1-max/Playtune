@@ -1,10 +1,11 @@
 import {
-    hasAudioPermission,
-    requestAudioPermission,
-    scanLibrary,
-    type EngineSong,
+  hasAudioPermission,
+  requestAudioPermission,
+  scanLibrary,
+  type EngineSong,
 } from "../engine/engine";
 import { createStore } from "./create-store";
+import { getSettings } from "./settings";
 
 export type LibraryStatus =
   | "checking"
@@ -39,7 +40,7 @@ async function scan() {
   store.set({ status: "scanning" });
   const start = Date.now();
   try {
-    const songs = await scanLibrary();
+    const songs = await scanLibrary(getSettings().minSongSeconds * 1000);
     store.set({
       status: "ready",
       songs,
@@ -72,7 +73,11 @@ export async function allowAndScan() {
     store.set({ status: result === "blocked" ? "blocked" : "need-permission" });
 }
 
-export async function rescanLibrary() {
+/** Scans again (Settings). Returns the number of songs found, or null if the scan could not run. */
+export async function rescanLibrary(): Promise<number | null> {
   if (__DEV__) console.log("[library] rescan");
+  if (!(await hasAudioPermission())) return null;
   await scan();
+  const state = store.get();
+  return state.status === "ready" ? state.songs.length : null;
 }

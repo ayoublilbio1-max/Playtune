@@ -1,17 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
-    View,
-    type LayoutChangeEvent,
-    type StyleProp,
-    type ViewStyle,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  View,
+  type LayoutChangeEvent,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
+import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { scheduleOnRN } from "react-native-worklets";
 
 type Props = {
@@ -22,6 +30,8 @@ type Props = {
   thickness?: number;
   thumbSize?: number;
   activeColor: string;
+  /** Optional gradient for the filled part (vertical: top → bottom, horizontal: left → right). */
+  activeGradient?: readonly string[];
   inactiveColor: string;
   thumbColor?: string;
   /** Animate value changes coming from the app (e.g. playback progress) over this many ms. */
@@ -49,6 +59,7 @@ export function Slider(props: Props) {
     thickness = 4,
     thumbSize = 14,
     activeColor,
+    activeGradient,
     inactiveColor,
     thumbColor,
     smoothMs = 0,
@@ -57,6 +68,8 @@ export function Slider(props: Props) {
   } = props;
 
   const length = useSharedValue(0);
+  const [trackLength, setTrackLength] = useState(0);
+  const gradientId = `sl${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const progress = useSharedValue(clamp(value));
   const dragging = useSharedValue(false);
   const lastSent = useSharedValue(-1);
@@ -159,6 +172,7 @@ export function Slider(props: Props) {
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     length.set(vertical ? height : width);
+    setTrackLength(vertical ? height : width);
   };
 
   return (
@@ -188,13 +202,59 @@ export function Slider(props: Props) {
         >
           <Animated.View
             style={[
-              { position: "absolute", backgroundColor: activeColor },
+              {
+                position: "absolute",
+                overflow: "hidden",
+                backgroundColor: activeGradient ? "transparent" : activeColor,
+              },
               vertical
                 ? { left: 0, right: 0, bottom: 0 }
                 : { left: 0, top: 0, bottom: 0 },
               fillStyle,
             ]}
-          />
+          >
+            {activeGradient && trackLength > 0 ? (
+              // The gradient covers the whole track; the fill only reveals its part of it.
+              <Svg
+                width={vertical ? thickness : trackLength}
+                height={vertical ? trackLength : thickness}
+                style={
+                  vertical
+                    ? { position: "absolute", left: 0, bottom: 0 }
+                    : { position: "absolute", left: 0, top: 0 }
+                }
+              >
+                <Defs>
+                  <LinearGradient
+                    id={gradientId}
+                    x1="0"
+                    y1="0"
+                    x2={vertical ? "0" : "1"}
+                    y2={vertical ? "1" : "0"}
+                  >
+                    {activeGradient.map((c, i) => (
+                      <Stop
+                        key={i}
+                        offset={String(
+                          activeGradient.length > 1
+                            ? i / (activeGradient.length - 1)
+                            : 0,
+                        )}
+                        stopColor={c}
+                      />
+                    ))}
+                  </LinearGradient>
+                </Defs>
+                <Rect
+                  x="0"
+                  y="0"
+                  width={vertical ? thickness : trackLength}
+                  height={vertical ? trackLength : thickness}
+                  fill={`url(#${gradientId})`}
+                />
+              </Svg>
+            ) : null}
+          </Animated.View>
         </View>
         <Animated.View
           style={[

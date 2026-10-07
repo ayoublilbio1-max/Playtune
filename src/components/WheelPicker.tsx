@@ -2,13 +2,13 @@ import * as Haptics from "expo-haptics";
 import { memo, useCallback, useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
-    Extrapolation,
-    interpolate,
-    useAnimatedRef,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
-    type SharedValue,
+  Extrapolation,
+  interpolate,
+  useAnimatedRef,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  type SharedValue,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 
@@ -25,7 +25,10 @@ type Props = {
   width?: number;
 };
 
-/** Scroll wheel (00–59…): snaps to a value, the middle value is bright, the others fade (UI thread). */
+/**
+ * Scroll wheel (00–59…): snaps to a value, the middle value is bright, the others fade (UI thread).
+ * Kept light: opacity only, and off-screen rows are clipped.
+ */
 export function WheelPicker({ count, value, onChange, width = 76 }: Props) {
   const colors = useTheme();
   const ref = useAnimatedRef<Animated.ScrollView>();
@@ -83,6 +86,7 @@ export function WheelPicker({ count, value, onChange, width = 76 }: Props) {
         decelerationRate="fast"
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled
+        removeClippedSubviews
         contentOffset={{ x: 0, y: value * WHEEL_ITEM }}
         contentContainerStyle={styles.content}
       >
@@ -103,6 +107,8 @@ const WheelItem = memo(function WheelItem({
 }) {
   const style = useAnimatedStyle(() => {
     const distance = Math.abs(y.get() - index * WHEEL_ITEM);
+    // Only opacity (no scale): cheaper per frame, and items far from the middle skip the maths.
+    if (distance > WHEEL_ITEM * 2) return { opacity: 0.12 };
     return {
       opacity: interpolate(
         distance,
@@ -110,16 +116,6 @@ const WheelItem = memo(function WheelItem({
         [1, 0.35, 0.12],
         Extrapolation.CLAMP,
       ),
-      transform: [
-        {
-          scale: interpolate(
-            distance,
-            [0, WHEEL_ITEM],
-            [1, 0.8],
-            Extrapolation.CLAMP,
-          ),
-        },
-      ],
     };
   });
   return (

@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { useTheme } from "../hooks/use-theme";
 import { initPlayer } from "../store/player";
+import { useThemeMode } from "../store/theme";
 
 // Keep the native splash until Home knows what to show, then fade it out.
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -36,6 +37,7 @@ function hideNavigationBar(reason: string) {
 
 export default function RootLayout() {
   const colors = useTheme();
+  const mode = useThemeMode();
 
   useEffect(() => {
     initPlayer();
@@ -60,7 +62,7 @@ export default function RootLayout() {
     <GestureHandlerRootView
       style={{ flex: 1, backgroundColor: colors.background }}
     >
-      <StatusBar style="light" />
+      <StatusBar style={mode === "light" ? "dark" : "light"} />
       <NavigationBar hidden />
       <Stack
         screenOptions={{
@@ -85,6 +87,18 @@ export default function RootLayout() {
         <Stack.Screen
           name="playlist/add-songs"
           options={{ animation: "slide_from_bottom" }}
+        />
+        <Stack.Screen
+          name="playlists"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="sleep-timer"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="settings"
+          options={{ animation: "slide_from_right" }}
         />
       </Stack>
     </GestureHandlerRootView>

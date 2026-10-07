@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,9 +21,11 @@ export function Toast() {
   const message = store.useStore((s) => s.message);
   const id = store.useStore((s) => s.id);
   const [visibleId, setVisibleId] = useState(0);
+  // A screen that opens later must not replay an old message (that was the "Removed from Liked songs" bug).
+  const idAtMount = useRef(id);
 
   useEffect(() => {
-    if (id === 0) return;
+    if (id === 0 || id === idAtMount.current) return;
     setVisibleId(id);
     const timer = setTimeout(() => setVisibleId(0), 2000);
     return () => clearTimeout(timer);

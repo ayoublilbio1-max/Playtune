@@ -11,7 +11,7 @@ type Props = {
   durationMs: number;
   isPlaying: boolean;
   onSeek: (positionMs: number) => void;
-  /** Thumb colour (white by default). */
+  /** Thumb colour (the theme's accent by default, so it shows on dark and light). */
   thumbColor?: string;
   thickness?: number;
 };
@@ -39,7 +39,7 @@ export function SeekBar({
         thumbSize={thickness + 9}
         activeColor={colors.accent}
         inactiveColor={colors.surfaceRaised}
-        thumbColor={thumbColor ?? colors.white}
+        thumbColor={thumbColor ?? colors.accent}
         onValueChange={(r) => setDragMs(r * durationMs)}
         onSlidingComplete={(r) => {
           setDragMs(null);

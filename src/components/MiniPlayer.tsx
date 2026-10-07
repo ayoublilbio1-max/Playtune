@@ -113,6 +113,7 @@ export function MiniPlayer() {
           name="stop"
           size={22}
           color={colors.textMuted}
+          pressedColor={colors.accent}
           accessibilityLabel="Stop"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(

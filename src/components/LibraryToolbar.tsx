@@ -33,7 +33,7 @@ export function LibraryToolbar({
         <TextInput
           value={query}
           onChangeText={onQueryChange}
-          placeholder="Search songs, artists, albums"
+          placeholder="Search songs, artists..."
           placeholderTextColor={colors.textFaint}
           selectionColor={colors.accent}
           cursorColor={colors.accent}

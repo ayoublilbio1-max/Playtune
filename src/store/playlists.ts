@@ -36,10 +36,11 @@ export async function loadPlaylists() {
   const start = Date.now();
   try {
     const db = getDb();
-    const rows = await db.getAllAsync<PlaylistRow>(
+    // Sync reads: the tables are tiny (a few ms) and this avoids waiting in the async queue at startup.
+    const rows = db.getAllSync<PlaylistRow>(
       "SELECT id, name, kind, created_at, updated_at FROM playlists ORDER BY (kind = 'liked') DESC, created_at DESC",
     );
-    const songRows = await db.getAllAsync<SongRow>(
+    const songRows = db.getAllSync<SongRow>(
       "SELECT playlist_id, song_id FROM playlist_songs ORDER BY playlist_id, position",
     );
     const songsByPlaylist = new Map<number, string[]>();

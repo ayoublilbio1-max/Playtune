@@ -1,13 +1,48 @@
 /**
  * Playtune colours — the only place hex values live.
- * Screens use `const colors = useTheme()` and these token names.
- * The app is dark only; `lightColors` points to the same palette until a light theme exists.
+ * Screens use `const colors = useTheme()` and these token names, so switching
+ * between the dark and light palettes changes the whole app at once.
  */
 
-export const darkColors = {
-  // Brand palette
-  background: "#19012B", // Deep Purple — main background
-  surface: "#261037", // Dark Plum — cards, bars, equalizer
+export type AppColors = {
+  // Brand palette (same in both themes)
+  background: string;
+  surface: string;
+  accent: string;
+  pink: string;
+  purple: string;
+  violet: string;
+  blue: string;
+  cyan: string;
+  neonBlue: string;
+  white: string;
+  glowPink: string;
+  mutedPurple: string;
+
+  // Text
+  textPrimary: string;
+  textMuted: string;
+  textFaint: string;
+
+  // UI helpers
+  surfaceRaised: string;
+  border: string;
+  overlay: string;
+  danger: string;
+  success: string;
+
+  // Gradients
+  outerGradient: readonly [string, string, string, string];
+  innerGradient: readonly [string, string, string, string];
+  /** Song / playlist without artwork (same colours as the notification placeholder). */
+  placeholderGradient: readonly [string, string, string];
+  /** Equalizer band lines (top → bottom). */
+  eqBandGradient: readonly [string, string, string];
+  /** Equalizer strength sliders (left → right). */
+  eqStrengthGradient: readonly [string, string];
+};
+
+const brand = {
   accent: "#E401E3", // Hot Magenta — main neon accent
   pink: "#F70AAE", // Vivid Pink
   purple: "#7C09F1", // Electric Purple
@@ -17,27 +52,44 @@ export const darkColors = {
   neonBlue: "#1C9EEF", // Neon Blue
   white: "#FFFFFF",
   glowPink: "#F7CCE9", // Soft Glow Pink
+  outerGradient: ["#F70AAE", "#E401E3", "#7C09F1", "#4AC4F4"] as const,
+  innerGradient: ["#7C09F1", "#5C08F5", "#3D08F8", "#1C9EEF"] as const,
+  placeholderGradient: ["#E401E3", "#7C09F1", "#19012B"] as const,
+  eqBandGradient: ["#4AC4F4", "#1C9EEF", "#3D08F8"] as const,
+  eqStrengthGradient: ["#5C08F5", "#7C09F1"] as const,
+};
+
+export const darkColors: AppColors = {
+  ...brand,
+  background: "#19012B", // Deep Purple — main background
+  surface: "#261037", // Dark Plum — cards, bars, equalizer
   mutedPurple: "#4D154B", // Muted Purple
 
-  // Text
   textPrimary: "#FFFFFF",
   textMuted: "rgba(255, 255, 255, 0.6)",
   textFaint: "rgba(255, 255, 255, 0.38)",
 
-  // UI helpers
   surfaceRaised: "#33184A",
   border: "rgba(255, 255, 255, 0.08)",
   overlay: "rgba(8, 0, 16, 0.72)",
   danger: "#FF4D6D",
   success: "#3DDC97",
-
-  // Gradients (outer ring and inner disc of the logo)
-  outerGradient: ["#F70AAE", "#E401E3", "#7C09F1", "#4AC4F4"] as const,
-  innerGradient: ["#7C09F1", "#5C08F5", "#3D08F8", "#1C9EEF"] as const,
-  // Song / playlist without artwork (same colours as the notification placeholder)
-  placeholderGradient: ["#E401E3", "#7C09F1", "#19012B"] as const,
 };
 
-export type AppColors = typeof darkColors;
+/** Light theme (trial): soft lilac background, white cards, deep purple text, same brand accents. */
+export const lightColors: AppColors = {
+  ...brand,
+  background: "#F6F0FB",
+  surface: "#FFFFFF",
+  mutedPurple: "#EAD9F2",
 
-export const lightColors: AppColors = darkColors;
+  textPrimary: "#1E0B2E",
+  textMuted: "rgba(30, 11, 46, 0.62)",
+  textFaint: "rgba(30, 11, 46, 0.38)",
+
+  surfaceRaised: "#ECE1F6",
+  border: "rgba(30, 11, 46, 0.09)",
+  overlay: "rgba(25, 1, 43, 0.45)",
+  danger: "#E0344E",
+  success: "#17A86C",
+};

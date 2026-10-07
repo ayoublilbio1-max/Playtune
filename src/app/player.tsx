@@ -21,11 +21,11 @@ import { Overlay } from "../components/Overlay";
 import { PromptModal } from "../components/PromptModal";
 import { SeekBar } from "../components/SeekBar";
 import { SkipButton } from "../components/SkipButton";
-import { SleepTimerSheet } from "../components/SleepTimerSheet";
 import { SongInfoDialog } from "../components/SongInfoDialog";
 import { showToast, Toast } from "../components/Toast";
 import {
   displayArtist,
+  equalizer,
   PlaytuneEngine,
   type EngineSong,
 } from "../engine/engine";
@@ -50,7 +50,7 @@ function goBack() {
   else router.replace("/");
 }
 
-/** ♥ with a small "pop" when tapped. */
+/** ♥ with a small "pop" when tapped. Muted when not liked, magenta when liked. */
 function LikeButton({
   liked,
   onPress,
@@ -82,13 +82,15 @@ function LikeButton({
       }}
       style={styles.actionButton}
     >
-      <Animated.View style={style}>
-        <Ionicons
-          name={liked ? "heart" : "heart-outline"}
-          size={28}
-          color={colors.accent}
-        />
-      </Animated.View>
+      {({ pressed }) => (
+        <Animated.View style={style}>
+          <Ionicons
+            name={liked ? "heart" : "heart-outline"}
+            size={28}
+            color={liked || pressed ? colors.accent : colors.textMuted}
+          />
+        </Animated.View>
+      )}
     </Pressable>
   );
 }
@@ -108,12 +110,19 @@ export default function PlayerScreen() {
   );
   const playlistsLoaded = usePlaylists((s) => s.loaded);
   const isLiked = !!(mediaId && liked?.songIds.includes(mediaId));
+  const inPlaylist = usePlaylists((s) =>
+    mediaId
+      ? s.playlists.some(
+          (p) => p.kind === "user" && p.songIds.includes(mediaId),
+        )
+      : false,
+  );
+  const [eqOn, setEqOn] = useState(false);
 
   const { positionMs, durationMs, isPlaying, resetKey, seekTo, seekBy, stop } =
     usePlaybackProgress();
   const sleepLeft = useSleepCountdown();
 
-  const [timerOpen, setTimerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [addSong, setAddSong] = useState<EngineSong | null>(null);
@@ -125,10 +134,14 @@ export default function PlayerScreen() {
     if (!playlistsLoaded) loadPlaylists();
   }, [playlistsLoaded]);
 
-  // The timer may have finished while the app was in the background.
+  // The timer may have finished while the app was in the background; the EQ may have changed on its screen.
   useFocusEffect(
     useCallback(() => {
       refreshSleepTimer();
+      equalizer
+        .get()
+        .then((info) => setEqOn(!!info.supported && !!info.enabled))
+        .catch(() => {});
     }, []),
   );
 
@@ -238,56 +251,59 @@ export default function PlayerScreen() {
             hitSlop={8}
             accessibilityLabel="Equalizer"
             onPress={() => router.push("/equalizer")}
-            style={({ pressed }) => [
-              styles.actionButton,
-              { opacity: pressed ? 0.6 : 1 },
-            ]}
+            style={styles.actionButton}
           >
-            <MaterialCommunityIcons
-              name="equalizer"
-              size={28}
-              color={colors.accent}
-            />
+            {({ pressed }) => (
+              <MaterialCommunityIcons
+                name="equalizer"
+                size={28}
+                color={eqOn || pressed ? colors.purple : colors.textMuted}
+              />
+            )}
           </Pressable>
           <Pressable
             hitSlop={8}
             accessibilityLabel="Sleep timer"
-            onPress={() => setTimerOpen(true)}
-            style={({ pressed }) => [
-              styles.actionButton,
-              { opacity: pressed ? 0.6 : 1 },
-            ]}
+            onPress={() => router.push("/sleep-timer")}
+            style={styles.actionButton}
           >
-            <Ionicons
-              name={sleepLeft !== null ? "timer" : "timer-outline"}
-              size={28}
-              color={colors.accent}
-            />
-            {sleepLeft !== null ? (
-              <AppText
-                size={10}
-                weight="semibold"
-                color={colors.accent}
-                style={styles.timerLabel}
-              >
-                {formatCountdown(sleepLeft)}
-              </AppText>
-            ) : null}
+            {({ pressed }) => (
+              <>
+                <Ionicons
+                  name={sleepLeft !== null ? "timer" : "timer-outline"}
+                  size={28}
+                  color={
+                    sleepLeft !== null || pressed
+                      ? colors.accent
+                      : colors.textMuted
+                  }
+                />
+                {sleepLeft !== null ? (
+                  <AppText
+                    size={10}
+                    weight="semibold"
+                    color={colors.accent}
+                    style={styles.timerLabel}
+                  >
+                    {formatCountdown(sleepLeft)}
+                  </AppText>
+                ) : null}
+              </>
+            )}
           </Pressable>
           <Pressable
             hitSlop={8}
             accessibilityLabel="Add to playlist"
             onPress={() => song && setAddSong(song)}
-            style={({ pressed }) => [
-              styles.actionButton,
-              { opacity: pressed ? 0.6 : 1 },
-            ]}
+            style={styles.actionButton}
           >
-            <MaterialCommunityIcons
-              name="playlist-plus"
-              size={30}
-              color={colors.accent}
-            />
+            {({ pressed }) => (
+              <MaterialCommunityIcons
+                name={inPlaylist ? "playlist-check" : "playlist-plus"}
+                size={30}
+                color={inPlaylist || pressed ? colors.accent : colors.textMuted}
+              />
+            )}
           </Pressable>
         </View>
         <LikeButton liked={isLiked} onPress={onLike} />
@@ -348,7 +364,8 @@ export default function PlayerScreen() {
         <IconButton
           name="stop"
           size={26}
-          color={colors.accent}
+          color={colors.textMuted}
+          pressedColor={colors.accent}
           accessibilityLabel="Stop"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
@@ -401,10 +418,6 @@ export default function PlayerScreen() {
         song={song ?? null}
         visible={infoOpen}
         onClose={() => setInfoOpen(false)}
-      />
-      <SleepTimerSheet
-        visible={timerOpen}
-        onClose={() => setTimerOpen(false)}
       />
       <AddToPlaylistSheet
         song={addSong}

@@ -25,6 +25,7 @@ function formatDb(levelMb: number) {
 /**
  * Equalizer (temporary design — the final one comes later).
  * On/off, presets, one slider per band, bass boost and virtualizer.
+ * Colours: purple / violet for controls, cyan → blue gradient for the band lines.
  */
 export default function EqualizerScreen() {
   const colors = useTheme();
@@ -160,7 +161,7 @@ export default function EqualizerScreen() {
           <Switch
             value={enabled}
             onValueChange={onToggle}
-            trackColor={{ false: colors.surfaceRaised, true: colors.accent }}
+            trackColor={{ false: colors.surfaceRaised, true: colors.violet }}
             thumbColor={colors.white}
           />
         </View>
@@ -195,7 +196,7 @@ export default function EqualizerScreen() {
               <View key={band.index} style={styles.band}>
                 <AppText
                   variant="label"
-                  color={level !== 0 ? colors.accent : colors.textMuted}
+                  color={level !== 0 ? colors.neonBlue : colors.textMuted}
                 >
                   {formatDb(level)}
                 </AppText>
@@ -207,9 +208,10 @@ export default function EqualizerScreen() {
                     thickness={6}
                     thumbSize={18}
                     step={0.01}
-                    activeColor={colors.accent}
+                    activeColor={colors.neonBlue}
+                    activeGradient={colors.eqBandGradient}
                     inactiveColor={colors.surfaceRaised}
-                    thumbColor={colors.white}
+                    thumbColor={colors.cyan}
                     onValueChange={(r) => {
                       const lv = toLevel(r);
                       setLiveLevels((prev) => ({ ...prev, [band.index]: lv }));
@@ -305,8 +307,8 @@ function Chip({
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: selected ? colors.accent : colors.surface,
-          borderColor: selected ? colors.accent : colors.border,
+          backgroundColor: selected ? colors.purple : colors.surface,
+          borderColor: selected ? colors.violet : colors.border,
           opacity: pressed ? 0.75 : 1,
         },
       ]}
@@ -351,7 +353,7 @@ function StrengthRow({
         <AppText weight="medium">{label}</AppText>
         <AppText
           variant="caption"
-          color={shown > 0 ? colors.accent : colors.textMuted}
+          color={shown > 0 ? colors.purple : colors.textMuted}
         >
           {Math.round(shown / 10)}%
         </AppText>
@@ -362,9 +364,10 @@ function StrengthRow({
         thickness={6}
         thumbSize={18}
         step={0.01}
-        activeColor={colors.accent}
+        activeColor={colors.purple}
+        activeGradient={colors.eqStrengthGradient}
         inactiveColor={colors.surfaceRaised}
-        thumbColor={colors.white}
+        thumbColor={colors.purple}
         onValueChange={(r) => {
           const s = Math.round(r * 1000);
           setLive(s);
