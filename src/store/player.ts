@@ -1,5 +1,10 @@
-import { PlaytuneEngine, type PlayerState } from "../engine/engine";
+import {
+  applyPauseOnDetach,
+  PlaytuneEngine,
+  type PlayerState,
+} from "../engine/engine";
 import { createStore } from "./create-store";
+import { getSettings } from "./settings";
 
 /** Live player state, fed by the engine's events. Progress (position) is polled separately by the mini player. */
 const store = createStore<PlayerState>({
@@ -40,6 +45,9 @@ export function initPlayer() {
     if (__DEV__)
       console.log(`[player] error ${e.code} on ${e.mediaId}: ${e.message}`);
   });
+
+  // Only needed when the user turned it off (the engine pauses on detach by default).
+  if (!getSettings().pauseOnDetach) applyPauseOnDetach(false);
 
   PlaytuneEngine.getState()
     .then((s) => {

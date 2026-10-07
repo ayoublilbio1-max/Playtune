@@ -1,6 +1,7 @@
 import Storage from "expo-sqlite/kv-store";
 
 import type { EngineSong } from "../engine/engine";
+import type { TKey } from "../i18n";
 
 export type SortKey =
   | "title"
@@ -12,15 +13,16 @@ export type SortKey =
   | "newest"
   | "oldest";
 
-export const SORT_OPTIONS: { key: SortKey; label: string; hint: string }[] = [
-  { key: "title", label: "Song name", hint: "A to Z" },
-  { key: "artist", label: "Artist", hint: "A to Z" },
-  { key: "album", label: "Album", hint: "A to Z" },
-  { key: "year", label: "Year", hint: "Newest first" },
-  { key: "duration", label: "Duration", hint: "Longest first" },
-  { key: "size", label: "Size", hint: "Largest first" },
-  { key: "newest", label: "Newest added", hint: "Last added first" },
-  { key: "oldest", label: "Oldest added", hint: "First added first" },
+/** label / hint are translation keys (shown with t()). */
+export const SORT_OPTIONS: { key: SortKey; label: TKey; hint: TKey }[] = [
+  { key: "title", label: "sort.title", hint: "sort.az" },
+  { key: "artist", label: "sort.artist", hint: "sort.az" },
+  { key: "album", label: "sort.album", hint: "sort.az" },
+  { key: "year", label: "sort.year", hint: "sort.yearHint" },
+  { key: "duration", label: "sort.duration", hint: "sort.durationHint" },
+  { key: "size", label: "sort.size", hint: "sort.sizeHint" },
+  { key: "newest", label: "sort.newest", hint: "sort.newestHint" },
+  { key: "oldest", label: "sort.oldest", hint: "sort.oldestHint" },
 ];
 
 const STORAGE_KEY = "playtune.sort";
@@ -45,8 +47,9 @@ export function saveSort(key: SortKey) {
   }
 }
 
-export function sortLabel(key: SortKey): string {
-  return SORT_OPTIONS.find((o) => o.key === key)?.label ?? "";
+/** Translation key of the sort's name. */
+export function sortLabel(key: SortKey): TKey {
+  return SORT_OPTIONS.find((o) => o.key === key)?.label ?? "sort.newest";
 }
 
 // Unknown artist / album go to the end of A–Z lists.

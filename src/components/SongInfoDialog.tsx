@@ -1,12 +1,13 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import {
-    displayAlbum,
-    displayArtist,
-    formatTime,
-    type EngineSong,
+  displayAlbum,
+  displayArtist,
+  formatTime,
+  type EngineSong,
 } from "../engine/engine";
 import { useTheme } from "../hooks/use-theme";
+import { useT, type TKey } from "../i18n";
 import { AppText } from "./AppText";
 import { Overlay } from "./Overlay";
 
@@ -24,30 +25,31 @@ function formatSize(bytes: number) {
 function formatName(song: EngineSong) {
   const ext = song.fileName?.split(".").pop();
   if (ext && ext !== song.fileName) return ext.toUpperCase();
-  return song.mimeType?.split("/").pop()?.toUpperCase() ?? "Unknown";
+  return song.mimeType?.split("/").pop()?.toUpperCase() ?? "—";
 }
 
 /** ⋮ → Song info: details read from the phone's music library. */
 export function SongInfoDialog({ song, visible, onClose }: Props) {
   const colors = useTheme();
+  const { t } = useT();
   if (!song) return null;
 
-  const rows: [string, string][] = [
-    ["Title", song.title],
-    ["Artist", displayArtist(song.artist)],
-    ["Album", displayAlbum(song.album)],
-    ["Year", song.year ? String(song.year) : "—"],
-    ["Duration", formatTime(song.durationMs)],
-    ["Format", formatName(song)],
-    ["Size", formatSize(song.size)],
-    ["File", song.fileName ?? "—"],
-    ["Folder", song.path ?? "—"],
+  const rows: [TKey, string][] = [
+    ["info.title", song.title],
+    ["info.artist", displayArtist(song.artist)],
+    ["info.album", displayAlbum(song.album)],
+    ["info.year", song.year ? String(song.year) : "—"],
+    ["info.duration", formatTime(song.durationMs)],
+    ["info.format", formatName(song)],
+    ["info.size", formatSize(song.size)],
+    ["info.file", song.fileName ?? "—"],
+    ["info.folder", song.path ?? "—"],
   ];
 
   return (
     <Overlay visible={visible} onClose={onClose} placement="center">
       <AppText variant="heading" style={styles.title}>
-        Song info
+        {t("player.songInfo")}
       </AppText>
       {rows.map(([label, value]) => (
         <View
@@ -55,7 +57,7 @@ export function SongInfoDialog({ song, visible, onClose }: Props) {
           style={[styles.row, { borderBottomColor: colors.border }]}
         >
           <AppText variant="caption" muted style={styles.label}>
-            {label}
+            {t(label)}
           </AppText>
           <AppText variant="caption" style={styles.value} selectable>
             {value}
@@ -69,7 +71,7 @@ export function SongInfoDialog({ song, visible, onClose }: Props) {
           { backgroundColor: colors.surfaceRaised, opacity: pressed ? 0.7 : 1 },
         ]}
       >
-        <AppText weight="semibold">Close</AppText>
+        <AppText weight="semibold">{t("common.close")}</AppText>
       </Pressable>
     </Overlay>
   );

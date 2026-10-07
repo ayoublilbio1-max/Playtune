@@ -12,13 +12,19 @@ import { showToast } from "../../components/Toast";
 import { fonts } from "../../constants/fonts";
 import { loadSort, sortSongs } from "../../constants/sort";
 import { useTheme } from "../../hooks/use-theme";
+import { useT } from "../../i18n";
 import { useLibrary } from "../../store/library";
-import { addSongsToPlaylist, usePlaylists } from "../../store/playlists";
+import {
+  addSongsToPlaylist,
+  playlistName,
+  usePlaylists,
+} from "../../store/playlists";
 
 /** Pick songs to add to a playlist: search, tap to select, then "Add". */
 export default function AddSongsScreen() {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
+  const { t, tn } = useT();
   const params = useLocalSearchParams<{ id: string }>();
   const id = Number(params.id);
 
@@ -67,7 +73,7 @@ export default function AddSongsScreen() {
     setSaving(true);
     const ids = sorted.filter((s) => selected.has(s.id)).map((s) => s.id); // keep the list order
     const added = await addSongsToPlaylist(id, ids);
-    showToast(added === 1 ? "Added 1 song" : `Added ${added} songs`);
+    showToast(tn("toast.addedSongs", added));
     router.back();
   };
 
@@ -79,7 +85,11 @@ export default function AddSongsScreen() {
       ]}
     >
       <ScreenHeader
-        title={playlist ? `Add to ${playlist.name}` : "Add songs"}
+        title={
+          playlist
+            ? t("playlist.addTo", { name: playlistName(playlist) })
+            : t("playlist.addSongs")
+        }
       />
 
       <View
@@ -92,7 +102,7 @@ export default function AddSongsScreen() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search songs"
+          placeholder={t("home.search")}
           placeholderTextColor={colors.textFaint}
           selectionColor={colors.accent}
           cursorColor={colors.accent}
@@ -125,9 +135,7 @@ export default function AddSongsScreen() {
         }}
         ListEmptyComponent={
           <AppText muted align="center" style={styles.empty}>
-            {q
-              ? "No songs match your search."
-              : "No songs found on this phone."}
+            {q ? t("home.noMatch") : t("home.noSongs")}
           </AppText>
         }
         contentContainerStyle={{ paddingBottom: 110 + insets.bottom }}
@@ -157,10 +165,8 @@ export default function AddSongsScreen() {
         >
           <AppText weight="semibold" color={colors.white}>
             {selected.size === 0
-              ? "Select songs"
-              : selected.size === 1
-                ? "Add 1 song"
-                : `Add ${selected.size} songs`}
+              ? t("playlist.selectSongs")
+              : tn("playlist.addCount", selected.size)}
           </AppText>
         </Pressable>
       </View>

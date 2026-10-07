@@ -2,8 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { memo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { displayArtist, formatTime, type EngineSong } from "../engine/engine";
+import { formatTime, type EngineSong } from "../engine/engine";
 import { useTheme } from "../hooks/use-theme";
+import { useT } from "../i18n";
 import { AppText } from "./AppText";
 import { Artwork } from "./Artwork";
 
@@ -35,6 +36,7 @@ export const SongRow = memo(function SongRow({
   onTrailingPress,
 }: Props) {
   const colors = useTheme();
+  const { t } = useT();
 
   return (
     <Pressable
@@ -60,7 +62,8 @@ export const SongRow = memo(function SongRow({
           {song.title}
         </AppText>
         <AppText variant="caption" muted numberOfLines={1}>
-          {displayArtist(song.artist)} · {formatTime(song.durationMs)}
+          {song.artist?.trim() ? song.artist : t("common.unknownArtist")} ·{" "}
+          {formatTime(song.durationMs)}
         </AppText>
       </View>
 

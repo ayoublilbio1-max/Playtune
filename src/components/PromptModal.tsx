@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { fonts } from "../constants/fonts";
 import { useTheme } from "../hooks/use-theme";
+import { useT } from "../i18n";
 import { AppText } from "./AppText";
 import { Overlay } from "./Overlay";
 
@@ -24,11 +25,12 @@ export function PromptModal({
   title,
   initialValue = "",
   placeholder,
-  confirmLabel = "Save",
+  confirmLabel,
   onSubmit,
   onCancel,
 }: Props) {
   const colors = useTheme();
+  const { t } = useT();
   const [value, setValue] = useState(initialValue);
 
   useEffect(() => {
@@ -78,7 +80,7 @@ export function PromptModal({
           ]}
           onPress={onCancel}
         >
-          <AppText weight="semibold">Cancel</AppText>
+          <AppText weight="semibold">{t("common.cancel")}</AppText>
         </Pressable>
         <Pressable
           disabled={!trimmed}
@@ -92,7 +94,7 @@ export function PromptModal({
           onPress={submit}
         >
           <AppText weight="semibold" color={colors.white}>
-            {confirmLabel}
+            {confirmLabel ?? t("common.save")}
           </AppText>
         </Pressable>
       </View>

@@ -21,10 +21,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useSleepCountdown } from "../hooks/use-countdown";
 import { useTheme } from "../hooks/use-theme";
+import { useT } from "../i18n";
+import { usePlayer } from "../store/player";
 import { getLikedPlaylist } from "../store/playlists";
 import { formatCountdown } from "../store/sleep";
 import { setThemeMode, useThemeMode } from "../store/theme";
 import { AppText } from "./AppText";
+import { PlayingBars } from "./PlayingBars";
 
 const DISC = require("../../assets/images/disc_logo.png");
 
@@ -62,6 +65,14 @@ function MenuItem({
   );
 }
 
+/** Bouncing bars next to "Now playing" while a song plays (resting while paused, hidden with no queue). */
+function NowPlayingMark() {
+  const hasQueue = usePlayer((s) => s.queueLength > 0);
+  const isPlaying = usePlayer((s) => s.isPlaying);
+  if (!hasQueue) return null;
+  return <PlayingBars playing={isPlaying} />;
+}
+
 /** Time left on the sleep timer next to its menu item (only while the menu is open). */
 function TimerLeft() {
   const colors = useTheme();
@@ -83,6 +94,7 @@ export function SideMenu({ visible, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const mode = useThemeMode();
+  const { t } = useT();
   const panelWidth = Math.max(Math.round(width * 0.5), 230);
 
   useEffect(() => {
@@ -140,12 +152,12 @@ export function SideMenu({ visible, onClose }: Props) {
                 color={colors.accent}
               />
             }
-            label="Playlists"
+            label={t("menu.playlists")}
             onPress={() => go(() => router.push("/playlists"))}
           />
           <MenuItem
             icon={<Ionicons name="heart" size={22} color={colors.accent} />}
-            label="Liked songs"
+            label={t("common.likedSongs")}
             onPress={() =>
               go(() => {
                 const liked = getLikedPlaylist();
@@ -165,8 +177,20 @@ export function SideMenu({ visible, onClose }: Props) {
                 color={colors.neonBlue}
               />
             }
-            label="Now playing"
+            label={t("menu.nowPlaying")}
+            trailing={<NowPlayingMark />}
             onPress={() => go(() => router.push("/player"))}
+          />
+          <MenuItem
+            icon={
+              <MaterialCommunityIcons
+                name="playlist-play"
+                size={22}
+                color={colors.pink}
+              />
+            }
+            label={t("menu.queue")}
+            onPress={() => go(() => router.push("/queue"))}
           />
           <MenuItem
             icon={
@@ -176,14 +200,14 @@ export function SideMenu({ visible, onClose }: Props) {
                 color={colors.purple}
               />
             }
-            label="Equalizer"
+            label={t("menu.equalizer")}
             onPress={() => go(() => router.push("/equalizer"))}
           />
           <MenuItem
             icon={
               <Ionicons name="timer-outline" size={22} color={colors.cyan} />
             }
-            label="Sleep timer"
+            label={t("menu.sleepTimer")}
             trailing={<TimerLeft />}
             onPress={() => go(() => router.push("/sleep-timer"))}
           />
@@ -195,7 +219,7 @@ export function SideMenu({ visible, onClose }: Props) {
                 color={colors.textMuted}
               />
             }
-            label="Settings"
+            label={t("menu.settings")}
             onPress={() => go(() => router.push("/settings"))}
           />
         </View>
@@ -207,7 +231,7 @@ export function SideMenu({ visible, onClose }: Props) {
             color={colors.textMuted}
           />
           <AppText weight="medium" style={styles.itemLabel}>
-            Light theme
+            {t("settings.lightTheme")}
           </AppText>
           <Switch
             value={mode === "light"}

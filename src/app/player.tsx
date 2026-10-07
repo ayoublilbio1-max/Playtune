@@ -23,15 +23,11 @@ import { SeekBar } from "../components/SeekBar";
 import { SkipButton } from "../components/SkipButton";
 import { SongInfoDialog } from "../components/SongInfoDialog";
 import { showToast, Toast } from "../components/Toast";
-import {
-  displayArtist,
-  equalizer,
-  PlaytuneEngine,
-  type EngineSong,
-} from "../engine/engine";
+import { equalizer, PlaytuneEngine, type EngineSong } from "../engine/engine";
 import { useSleepCountdown } from "../hooks/use-countdown";
 import { usePlaybackProgress } from "../hooks/use-playback-progress";
 import { useTheme } from "../hooks/use-theme";
+import { useT } from "../i18n";
 import { initLibrary, useLibrary } from "../store/library";
 import { usePlayer } from "../store/player";
 import {
@@ -100,11 +96,14 @@ export default function PlayerScreen() {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
+  const { t } = useT();
 
   const mediaId = usePlayer((s) => s.mediaId);
   const repeatMode = usePlayer((s) => s.repeatMode);
   const queueLength = usePlayer((s) => s.queueLength);
-  const song = useLibrary((s) => (mediaId ? s.byId.get(mediaId) : undefined));
+  const song = useLibrary((s) =>
+    mediaId ? s.allById.get(mediaId) : undefined,
+  );
   const liked = usePlaylists((s) =>
     s.playlists.find((p) => p.kind === "liked"),
   );
@@ -151,7 +150,7 @@ export default function PlayerScreen() {
   const onLike = async () => {
     if (!song) return;
     const nowLiked = await toggleLiked(song.id);
-    showToast(nowLiked ? "Added to Liked songs" : "Removed from Liked songs");
+    showToast(nowLiked ? t("toast.liked") : t("toast.unliked"));
   };
 
   const onShare = () => {
@@ -159,7 +158,7 @@ export default function PlayerScreen() {
     if (!song) return;
     PlaytuneEngine.shareSong(song.id, song.mimeType, song.title).catch((e) => {
       if (__DEV__) console.log(`[share] failed — ${String(e)}`);
-      showToast("Could not share this song");
+      showToast(t("toast.shareFailed"));
     });
   };
 
@@ -169,7 +168,7 @@ export default function PlayerScreen() {
     if (!target) return;
     const id = await createPlaylist(name);
     await addSongsToPlaylist(id, [target.id]);
-    showToast(`Added to ${name}`);
+    showToast(t("toast.addedTo", { name }));
   };
 
   if (queueLength === 0 || !mediaId) {
@@ -190,9 +189,9 @@ export default function PlayerScreen() {
         </View>
         <View style={styles.empty}>
           <Ionicons name="musical-notes" size={48} color={colors.accent} />
-          <AppText variant="heading">Nothing is playing</AppText>
+          <AppText variant="heading">{t("player.nothingTitle")}</AppText>
           <AppText muted align="center">
-            Pick a song in your library to start.
+            {t("player.nothingText")}
           </AppText>
         </View>
       </View>
@@ -214,12 +213,21 @@ export default function PlayerScreen() {
           accessibilityLabel="Back"
           onPress={goBack}
         />
-        <IconButton
-          name="ellipsis-vertical"
-          size={22}
-          accessibilityLabel="More"
-          onPress={() => setMenuOpen(true)}
-        />
+        <View style={styles.headerRight}>
+          <IconButton
+            family="mci"
+            name="playlist-play"
+            size={26}
+            accessibilityLabel={t("menu.queue")}
+            onPress={() => router.push("/queue")}
+          />
+          <IconButton
+            name="ellipsis-vertical"
+            size={22}
+            accessibilityLabel="More"
+            onPress={() => setMenuOpen(true)}
+          />
+        </View>
       </View>
 
       {/* Artwork + volume */}
@@ -236,11 +244,11 @@ export default function PlayerScreen() {
       <View style={styles.titles}>
         <MarqueeText
           key={mediaId}
-          text={song?.title ?? "Unknown song"}
+          text={song?.title ?? t("common.unknownSong")}
           textProps={{ size: 26, weight: "bold" }}
         />
         <AppText size={16} muted align="center" numberOfLines={1}>
-          {displayArtist(song?.artist)}
+          {song?.artist?.trim() ? song.artist : t("common.unknownArtist")}
         </AppText>
       </View>
 
@@ -393,7 +401,7 @@ export default function PlayerScreen() {
             size={22}
             color={colors.textPrimary}
           />
-          <AppText>Share song</AppText>
+          <AppText>{t("player.share")}</AppText>
         </Pressable>
         <Pressable
           style={({ pressed }) => [
@@ -410,7 +418,24 @@ export default function PlayerScreen() {
             size={22}
             color={colors.textPrimary}
           />
-          <AppText>Song info</AppText>
+          <AppText>{t("player.songInfo")}</AppText>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.menuRow,
+            { opacity: pressed ? 0.7 : 1 },
+          ]}
+          onPress={() => {
+            setMenuOpen(false);
+            router.push("/queue");
+          }}
+        >
+          <MaterialCommunityIcons
+            name="playlist-play"
+            size={22}
+            color={colors.textPrimary}
+          />
+          <AppText>{t("menu.queue")}</AppText>
         </Pressable>
       </Overlay>
 
@@ -421,6 +446,7 @@ export default function PlayerScreen() {
       />
       <AddToPlaylistSheet
         song={addSong}
+        showActions={false}
         onClose={() => setAddSong(null)}
         onNewPlaylist={(s) => {
           setAddSong(null);
@@ -429,9 +455,9 @@ export default function PlayerScreen() {
       />
       <PromptModal
         visible={newPlaylistFor !== null}
-        title="New playlist"
-        placeholder="Playlist name"
-        confirmLabel="Create"
+        title={t("common.newPlaylist")}
+        placeholder={t("common.playlistName")}
+        confirmLabel={t("common.create")}
         onSubmit={onCreateAndAdd}
         onCancel={() => setNewPlaylistFor(null)}
       />
@@ -450,6 +476,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 8,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   center: {
     flex: 1,

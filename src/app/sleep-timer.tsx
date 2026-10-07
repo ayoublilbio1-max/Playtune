@@ -2,10 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withTiming,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -15,11 +15,12 @@ import { showToast, Toast } from "../components/Toast";
 import { WHEEL_ITEM, WheelPicker } from "../components/WheelPicker";
 import { useSleepCountdown } from "../hooks/use-countdown";
 import { useTheme } from "../hooks/use-theme";
+import { t as tNow, useT } from "../i18n";
 import {
-    cancelSleepTimer,
-    formatCountdown,
-    refreshSleepTimer,
-    startSleepTimer,
+  cancelSleepTimer,
+  formatCountdown,
+  refreshSleepTimer,
+  startSleepTimer,
 } from "../store/sleep";
 
 const PRESETS = [15, 30, 45, 60];
@@ -33,6 +34,9 @@ function describe(totalSeconds: number) {
     .filter(Boolean)
     .join(" ");
 }
+
+/** Unit labels above the wheels. */
+const UNITS = ["sleep.hours", "sleep.minutes", "sleep.seconds"] as const;
 
 /** Pulsing boxes in place of the wheels for the first frame (the screen opens at once, the wheels follow). */
 function WheelsSkeleton() {
@@ -62,6 +66,7 @@ function WheelsSkeleton() {
 export default function SleepTimerScreen() {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
+  const { t } = useT();
   const remaining = useSleepCountdown();
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
@@ -93,13 +98,13 @@ export default function SleepTimerScreen() {
   const start = async () => {
     if (total === 0) return;
     await startSleepTimer(total * 1000);
-    showToast(`Music stops in ${describe(total)}`);
+    showToast(tNow("toast.sleepStart", { time: describe(total) }));
   };
 
   const extend = async () => {
     if (remaining === null) return;
     await startSleepTimer(remaining + EXTEND_MS);
-    showToast("5 minutes added");
+    showToast(tNow("toast.sleepExtended"));
   };
 
   const turnOff = async () => {
@@ -107,7 +112,7 @@ export default function SleepTimerScreen() {
     setHours(0);
     setMinutes(0);
     setSeconds(0);
-    showToast("Sleep timer off");
+    showToast(tNow("toast.sleepOff"));
   };
 
   const pickPreset = (min: number) => {
@@ -123,7 +128,7 @@ export default function SleepTimerScreen() {
         { backgroundColor: colors.background, paddingTop: insets.top },
       ]}
     >
-      <ScreenHeader title="Sleep timer" />
+      <ScreenHeader title={t("menu.sleepTimer")} />
 
       <ScrollView
         contentContainerStyle={[
@@ -149,12 +154,11 @@ export default function SleepTimerScreen() {
                 {formatCountdown(remaining)}
               </AppText>
               <AppText variant="caption" muted>
-                until the music stops
+                {t("sleep.until")}
               </AppText>
             </View>
             <AppText variant="caption" muted align="center" style={styles.note}>
-              The music fades out during the last 10 seconds, then pauses. The
-              timer keeps running when you leave the app.
+              {t("sleep.note")}
             </AppText>
             <View style={styles.buttons}>
               <Pressable
@@ -181,7 +185,7 @@ export default function SleepTimerScreen() {
                 ]}
               >
                 <AppText weight="semibold" color={colors.white}>
-                  Turn off
+                  {t("sleep.turnOff")}
                 </AppText>
               </Pressable>
             </View>
@@ -189,12 +193,12 @@ export default function SleepTimerScreen() {
         ) : (
           <View>
             <AppText variant="heading" align="center" style={styles.title}>
-              Stop music after
+              {t("sleep.heading")}
             </AppText>
 
             <View style={[styles.card, { backgroundColor: colors.surface }]}>
               <View style={styles.units}>
-                {["hours", "min", "sec"].map((u) => (
+                {UNITS.map((u) => (
                   <AppText
                     key={u}
                     variant="label"
@@ -202,7 +206,7 @@ export default function SleepTimerScreen() {
                     align="center"
                     style={styles.unit}
                   >
-                    {u}
+                    {t(u)}
                   </AppText>
                 ))}
               </View>
@@ -277,7 +281,9 @@ export default function SleepTimerScreen() {
             >
               <Ionicons name="moon" size={18} color={colors.white} />
               <AppText weight="semibold" color={colors.white}>
-                {total === 0 ? "Pick a time" : `Start · ${describe(total)}`}
+                {total === 0
+                  ? t("sleep.pick")
+                  : t("sleep.start", { time: describe(total) })}
               </AppText>
             </Pressable>
           </View>

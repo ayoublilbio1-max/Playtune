@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { fonts } from "../constants/fonts";
 import { useTheme } from "../hooks/use-theme";
+import { useT } from "../i18n";
 import { IconButton } from "./IconButton";
 
 type Props = {
@@ -20,6 +21,7 @@ export function LibraryToolbar({
   onEqualizerPress,
 }: Props) {
   const colors = useTheme();
+  const { t } = useT();
 
   return (
     <View style={styles.row}>
@@ -33,7 +35,7 @@ export function LibraryToolbar({
         <TextInput
           value={query}
           onChangeText={onQueryChange}
-          placeholder="Search songs, artists..."
+          placeholder={t("home.search")}
           placeholderTextColor={colors.textFaint}
           selectionColor={colors.accent}
           cursorColor={colors.accent}

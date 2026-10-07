@@ -24,11 +24,13 @@ import {
 } from "../../engine/engine";
 import { usePlaylistCover } from "../../hooks/use-artwork";
 import { useTheme } from "../../hooks/use-theme";
+import { useT } from "../../i18n";
 import { initLibrary, useLibrary } from "../../store/library";
 import { usePlayer } from "../../store/player";
 import {
   deletePlaylist,
   loadPlaylists,
+  playlistName,
   removeSongFromPlaylist,
   renamePlaylist,
   usePlaylists,
@@ -39,6 +41,7 @@ const COVER_SIZE = 200;
 export default function PlaylistScreen() {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
+  const { t, tn } = useT();
   const params = useLocalSearchParams<{ id: string }>();
   const id = Number(params.id);
 
@@ -101,7 +104,7 @@ export default function PlaylistScreen() {
         <ScreenHeader />
         <View style={styles.center}>
           <AppText muted align="center">
-            This playlist doesn't exist anymore.
+            {t("playlist.gone")}
           </AppText>
         </View>
       </View>
@@ -131,10 +134,10 @@ export default function PlaylistScreen() {
         numberOfLines={2}
         style={styles.name}
       >
-        {playlist?.name ?? ""}
+        {playlist ? playlistName(playlist) : ""}
       </AppText>
       <AppText variant="caption" muted align="center">
-        {songs.length === 1 ? "1 song" : `${songs.length} songs`}
+        {tn("songs", songs.length)}
         {songs.length > 0 ? ` · ${formatTotalDuration(totalMs)}` : ""}
       </AppText>
 
@@ -152,7 +155,7 @@ export default function PlaylistScreen() {
         >
           <Ionicons name="play" size={18} color={colors.white} />
           <AppText weight="semibold" color={colors.white}>
-            Play
+            {t("common.play")}
           </AppText>
         </Pressable>
         <Pressable
@@ -168,7 +171,7 @@ export default function PlaylistScreen() {
           ]}
         >
           <Ionicons name="add" size={20} color={colors.textPrimary} />
-          <AppText weight="semibold">Add songs</AppText>
+          <AppText weight="semibold">{t("playlist.addSongs")}</AppText>
         </Pressable>
       </View>
     </View>
@@ -216,7 +219,7 @@ export default function PlaylistScreen() {
           ListHeaderComponent={header}
           ListEmptyComponent={
             <AppText muted align="center" style={styles.empty}>
-              No songs yet. Tap “Add songs” to fill this playlist.
+              {t("playlist.empty")}
             </AppText>
           }
           contentContainerStyle={{
@@ -247,7 +250,7 @@ export default function PlaylistScreen() {
             size={22}
             color={colors.textPrimary}
           />
-          <AppText>Rename playlist</AppText>
+          <AppText>{t("playlist.rename")}</AppText>
         </Pressable>
         <Pressable
           style={({ pressed }) => [
@@ -260,15 +263,14 @@ export default function PlaylistScreen() {
           }}
         >
           <Ionicons name="trash-outline" size={22} color={colors.danger} />
-          <AppText color={colors.danger}>Delete playlist</AppText>
+          <AppText color={colors.danger}>{t("playlist.delete")}</AppText>
         </Pressable>
       </Overlay>
 
       <PromptModal
         visible={renameOpen}
-        title="Rename playlist"
+        title={t("playlist.rename")}
         initialValue={playlist?.name ?? ""}
-        confirmLabel="Save"
         onCancel={() => setRenameOpen(false)}
         onSubmit={(name) => {
           setRenameOpen(false);
@@ -278,26 +280,29 @@ export default function PlaylistScreen() {
 
       <ConfirmModal
         visible={confirmDelete}
-        title="Delete playlist?"
-        message={`"${playlist?.name ?? ""}" will be deleted. Your songs stay on the phone.`}
-        confirmLabel="Delete"
+        title={t("playlist.deleteTitle")}
+        message={t("playlist.deleteText", { name: playlist?.name ?? "" })}
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
           setConfirmDelete(false);
           const name = playlist?.name ?? "";
           router.back();
-          deletePlaylist(id).then(() => showToast(`Deleted ${name}`));
+          deletePlaylist(id).then(() =>
+            showToast(t("toast.deleted", { name })),
+          );
         }}
       />
 
       <ConfirmModal
         visible={removeSong !== null}
         icon="remove-circle-outline"
-        title="Remove from playlist?"
+        title={t("playlist.removeTitle")}
         message={
-          removeSong ? `"${removeSong.title}" stays on your phone.` : undefined
+          removeSong
+            ? t("playlist.removeText", { title: removeSong.title })
+            : undefined
         }
-        confirmLabel="Remove"
+        confirmLabel={t("common.remove")}
         onCancel={() => setRemoveSong(null)}
         onConfirm={() => {
           const song = removeSong;

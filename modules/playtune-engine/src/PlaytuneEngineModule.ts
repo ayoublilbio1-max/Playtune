@@ -58,6 +58,12 @@ declare class PlaytuneEngineModule extends NativeModule<PlaytuneEngineEvents> {
   cancelSleepTimer(): Promise<SleepTimerInfo>;
   getSleepTimer(): Promise<SleepTimerInfo>;
 
+  /**
+   * Pause when headphones / Bluetooth disconnect (on by default).
+   * Added in the next native build: older app builds don't have it, so call it through engine.ts.
+   */
+  setPauseOnDetach?(enabled: boolean): Promise<boolean>;
+
   /** Opens Android's share screen with the song file. */
   shareSong(
     id: string,

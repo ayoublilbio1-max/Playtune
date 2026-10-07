@@ -10,11 +10,12 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AddToPlaylistSheet } from "../components/AddToPlaylistSheet";
 import { AppText } from "../components/AppText";
+import { CollectionList, type LibraryTab } from "../components/CollectionList";
 import { IconButton } from "../components/IconButton";
 import { LibraryToolbar } from "../components/LibraryToolbar";
 import { MINI_PLAYER_SPACE, MiniPlayer } from "../components/MiniPlayer";
@@ -34,6 +35,7 @@ import {
 } from "../constants/sort";
 import { playSongs, type EngineSong } from "../engine/engine";
 import { useTheme } from "../hooks/use-theme";
+import { useT, type TKey } from "../i18n";
 import { allowAndScan, initLibrary, useLibrary } from "../store/library";
 import { usePlayer } from "../store/player";
 import {
@@ -42,6 +44,13 @@ import {
   getPlaylists,
   loadPlaylists,
 } from "../store/playlists";
+
+const TABS: { key: LibraryTab; label: TKey }[] = [
+  { key: "songs", label: "browse.songs" },
+  { key: "album", label: "browse.albums" },
+  { key: "artist", label: "browse.artists" },
+  { key: "folder", label: "browse.folders" },
+];
 
 let splashHidden = false;
 
@@ -53,6 +62,7 @@ type Prompt =
 export default function HomeScreen() {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
+  const { t, tn } = useT();
 
   const status = useLibrary((s) => s.status);
   const songs = useLibrary((s) => s.songs);
@@ -68,6 +78,7 @@ export default function HomeScreen() {
   const [addSong, setAddSong] = useState<EngineSong | null>(null);
   const [prompt, setPrompt] = useState<Prompt>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [tab, setTab] = useState<LibraryTab>("songs");
 
   useEffect(() => {
     initLibrary();
@@ -149,7 +160,7 @@ export default function HomeScreen() {
     const id = await createPlaylist(name);
     if (current.mode === "create-and-add") {
       await addSongsToPlaylist(id, [current.song.id]);
-      showToast(`Added to ${name}`);
+      showToast(t("toast.addedTo", { name }));
     } else {
       openPlaylist(id);
     }
@@ -157,7 +168,7 @@ export default function HomeScreen() {
 
   const listHeader = q ? (
     <AppText variant="caption" muted style={styles.sectionLabel}>
-      {visible.length === 1 ? "1 result" : `${visible.length} results`}
+      {tn("results", visible.length)}
     </AppText>
   ) : (
     <View>
@@ -167,9 +178,9 @@ export default function HomeScreen() {
         onPlay={playPlaylist}
       />
       <View style={styles.songsHeader}>
-        <AppText variant="heading">Songs</AppText>
+        <AppText variant="heading">{t("browse.songs")}</AppText>
         <AppText variant="caption" muted>
-          {songs.length} · {sortLabel(sort)}
+          {songs.length} · {t(sortLabel(sort))}
         </AppText>
       </View>
     </View>
@@ -200,35 +211,78 @@ export default function HomeScreen() {
             onSortPress={() => setSortOpen(true)}
             onEqualizerPress={() => router.push("/equalizer")}
           />
-          <FlashList
-            data={visible}
-            keyExtractor={(s) => s.id}
-            extraData={currentId}
-            renderItem={({ item, index }) => (
-              <SongRow
-                song={item}
-                index={index}
-                active={item.id === currentId}
-                onPress={onPressSong}
-                onLongPress={openAddSheet}
-                trailing="more"
-                onTrailingPress={openAddSheet}
-              />
-            )}
-            ListHeaderComponent={listHeader}
-            ListEmptyComponent={
-              <AppText muted align="center" style={styles.empty}>
-                {q
-                  ? "No songs match your search."
-                  : "No songs found on this phone."}
-              </AppText>
-            }
-            contentContainerStyle={{
-              paddingBottom: hasQueue ? MINI_PLAYER_SPACE : 32,
-            }}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-          />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tabsScroll}
+            contentContainerStyle={styles.tabs}
+          >
+            {TABS.map((item) => {
+              const selected = item.key === tab;
+              return (
+                <Pressable
+                  key={item.key}
+                  onPress={() => {
+                    if (__DEV__) console.log(`[home] tab → ${item.key}`);
+                    setTab(item.key);
+                  }}
+                  style={({ pressed }) => [
+                    styles.tab,
+                    {
+                      backgroundColor: selected
+                        ? colors.accent
+                        : colors.surface,
+                      borderColor: selected ? colors.accent : colors.border,
+                      opacity: pressed ? 0.8 : 1,
+                    },
+                  ]}
+                >
+                  <AppText
+                    variant="caption"
+                    weight={selected ? "semibold" : "medium"}
+                    color={selected ? colors.white : undefined}
+                  >
+                    {t(item.label)}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          {tab !== "songs" ? (
+            <CollectionList
+              kind={tab}
+              query={q}
+              bottomSpace={hasQueue ? MINI_PLAYER_SPACE : 32}
+            />
+          ) : (
+            <FlashList
+              data={visible}
+              keyExtractor={(s) => s.id}
+              extraData={currentId}
+              renderItem={({ item, index }) => (
+                <SongRow
+                  song={item}
+                  index={index}
+                  active={item.id === currentId}
+                  onPress={onPressSong}
+                  onLongPress={openAddSheet}
+                  trailing="more"
+                  onTrailingPress={openAddSheet}
+                />
+              )}
+              ListHeaderComponent={listHeader}
+              ListEmptyComponent={
+                <AppText muted align="center" style={styles.empty}>
+                  {q ? t("home.noMatch") : t("home.noSongs")}
+                </AppText>
+              }
+              contentContainerStyle={{
+                paddingBottom: hasQueue ? MINI_PLAYER_SPACE : 32,
+              }}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+            />
+          )}
         </>
       ) : null}
 
@@ -240,12 +294,10 @@ export default function HomeScreen() {
         <View style={styles.center}>
           <Ionicons name="musical-notes" size={48} color={colors.accent} />
           <AppText variant="heading" align="center">
-            Allow access to your music
+            {t("perm.title")}
           </AppText>
           <AppText muted align="center">
-            {status === "blocked"
-              ? "Access was denied. Turn it on in Settings › Apps › Playtune › Permissions."
-              : "Playtune needs it to find the songs on your phone."}
+            {status === "blocked" ? t("perm.blocked") : t("perm.why")}
           </AppText>
           {status === "need-permission" ? (
             <Pressable
@@ -253,7 +305,7 @@ export default function HomeScreen() {
               onPress={allowAndScan}
             >
               <AppText weight="semibold" color={colors.white}>
-                Allow
+                {t("perm.allow")}
               </AppText>
             </Pressable>
           ) : null}
@@ -286,9 +338,9 @@ export default function HomeScreen() {
       />
       <PromptModal
         visible={prompt !== null}
-        title="New playlist"
-        placeholder="Playlist name"
-        confirmLabel="Create"
+        title={t("common.newPlaylist")}
+        placeholder={t("common.playlistName")}
+        confirmLabel={t("common.create")}
         onSubmit={onPromptSubmit}
         onCancel={() => setPrompt(null)}
       />
@@ -310,6 +362,21 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     paddingTop: 4,
     paddingBottom: 8,
+  },
+  tabsScroll: {
+    flexGrow: 0,
+  },
+  tabs: {
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  tab: {
+    height: 34,
+    paddingHorizontal: 16,
+    borderRadius: 17,
+    borderWidth: 1,
+    justifyContent: "center",
   },
   sectionLabel: {
     paddingHorizontal: 20,

@@ -6,6 +6,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 import { usePlaylistCover } from "../hooks/use-artwork";
 import { useTheme } from "../hooks/use-theme";
+import { useT } from "../i18n";
 import { AppText } from "./AppText";
 import { ArtworkPlaceholder } from "./ArtworkPlaceholder";
 
@@ -34,6 +35,7 @@ export const PlaylistCard = memo(function PlaylistCard({
   onPlay,
 }: Props) {
   const colors = useTheme();
+  const { t, tn } = useT();
   const cover = usePlaylistCover(songIds, 400);
   const shadeId = `shade${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const count = songIds.length;
@@ -87,10 +89,10 @@ export const PlaylistCard = memo(function PlaylistCard({
             numberOfLines={1}
             color={colors.white}
           >
-            {name}
+            {liked ? t("common.likedSongs") : name}
           </AppText>
           <AppText variant="caption" numberOfLines={1} color={colors.glowPink}>
-            {count === 1 ? "1 song" : `${count} songs`}
+            {tn("songs", count)}
           </AppText>
         </View>
         {count > 0 ? (
@@ -118,6 +120,7 @@ export const PlaylistCard = memo(function PlaylistCard({
 /** First card of the row: create a playlist. */
 export function NewPlaylistCard({ onPress }: { onPress: () => void }) {
   const colors = useTheme();
+  const { t } = useT();
   return (
     <Pressable
       onPress={onPress}
@@ -135,7 +138,7 @@ export function NewPlaylistCard({ onPress }: { onPress: () => void }) {
         <Ionicons name="add" size={28} color={colors.white} />
       </View>
       <AppText weight="semibold" align="center">
-        New playlist
+        {t("common.newPlaylist")}
       </AppText>
     </Pressable>
   );

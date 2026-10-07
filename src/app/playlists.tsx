@@ -16,19 +16,20 @@ import { ScreenHeader } from "../components/ScreenHeader";
 import { SongListSkeleton } from "../components/SongRowSkeleton";
 import { showToast, Toast } from "../components/Toast";
 import {
-    formatTotalDuration,
-    playSongs,
-    type EngineSong,
+  formatTotalDuration,
+  playSongs,
+  type EngineSong,
 } from "../engine/engine";
 import { useTheme } from "../hooks/use-theme";
+import { useT } from "../i18n";
 import { initLibrary, useLibrary } from "../store/library";
 import { usePlayer } from "../store/player";
 import {
-    createPlaylist,
-    deletePlaylist,
-    loadPlaylists,
-    renamePlaylist,
-    usePlaylists,
+  createPlaylist,
+  deletePlaylist,
+  loadPlaylists,
+  renamePlaylist,
+  usePlaylists,
 } from "../store/playlists";
 
 type Row = {
@@ -43,6 +44,7 @@ type Row = {
 export default function PlaylistsScreen() {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
+  const { t, tn } = useT();
 
   const loaded = usePlaylists((s) => s.loaded);
   const playlists = usePlaylists((s) => s.playlists);
@@ -70,10 +72,10 @@ export default function PlaylistsScreen() {
         (sum, id) => sum + (byId.get(id)?.durationMs ?? 0),
         0,
       );
-      const count = songIds.length === 1 ? "1 song" : `${songIds.length} songs`;
+      const count = tn("songs", songIds.length);
       return {
         id: p.id,
-        name: p.name,
+        name: p.kind === "liked" ? t("common.likedSongs") : p.name,
         liked: p.kind === "liked",
         songIds,
         subtitle:
@@ -82,7 +84,7 @@ export default function PlaylistsScreen() {
             : count,
       };
     });
-  }, [playlists, byId]);
+  }, [playlists, byId, t, tn]);
 
   const userCount = rows.filter((r) => !r.liked).length;
   const nameOf = (id: number | null) =>
@@ -107,7 +109,7 @@ export default function PlaylistsScreen() {
   const onCreate = async (name: string) => {
     setCreateOpen(false);
     const id = await createPlaylist(name);
-    showToast(`Created ${name}`);
+    showToast(t("toast.created", { name }));
     openPlaylist(id);
   };
 
@@ -122,12 +124,12 @@ export default function PlaylistsScreen() {
       ]}
     >
       <ScreenHeader
-        title="Playlists"
+        title={t("menu.playlists")}
         right={
           <IconButton
             name="add"
             size={26}
-            accessibilityLabel="New playlist"
+            accessibilityLabel={t("common.newPlaylist")}
             onPress={() => setCreateOpen(true)}
           />
         }
@@ -153,8 +155,10 @@ export default function PlaylistsScreen() {
           )}
           ListHeaderComponent={
             <AppText variant="caption" muted style={styles.count}>
-              {userCount === 1 ? "1 playlist" : `${userCount} playlists`} +
-              Liked songs
+              {t("playlists.count", {
+                count: tn("playlists", userCount),
+                liked: t("common.likedSongs"),
+              })}
             </AppText>
           }
           ListFooterComponent={
@@ -171,7 +175,9 @@ export default function PlaylistsScreen() {
                 ]}
               >
                 <Ionicons name="add-circle" size={28} color={colors.accent} />
-                <AppText weight="semibold">Create your first playlist</AppText>
+                <AppText weight="semibold">
+                  {t("playlists.createFirst")}
+                </AppText>
               </Pressable>
             ) : null
           }
@@ -203,7 +209,7 @@ export default function PlaylistsScreen() {
             size={22}
             color={colors.textPrimary}
           />
-          <AppText>Rename playlist</AppText>
+          <AppText>{t("playlist.rename")}</AppText>
         </Pressable>
         <Pressable
           style={({ pressed }) => [
@@ -216,24 +222,23 @@ export default function PlaylistsScreen() {
           }}
         >
           <Ionicons name="trash-outline" size={22} color={colors.danger} />
-          <AppText color={colors.danger}>Delete playlist</AppText>
+          <AppText color={colors.danger}>{t("playlist.delete")}</AppText>
         </Pressable>
       </Overlay>
 
       <PromptModal
         visible={createOpen}
-        title="New playlist"
-        placeholder="Playlist name"
-        confirmLabel="Create"
+        title={t("common.newPlaylist")}
+        placeholder={t("common.playlistName")}
+        confirmLabel={t("common.create")}
         onSubmit={onCreate}
         onCancel={() => setCreateOpen(false)}
       />
 
       <PromptModal
         visible={renameFor !== null}
-        title="Rename playlist"
+        title={t("playlist.rename")}
         initialValue={nameOf(renameFor)}
-        confirmLabel="Save"
         onCancel={() => setRenameFor(null)}
         onSubmit={(name) => {
           const id = renameFor;
@@ -244,16 +249,17 @@ export default function PlaylistsScreen() {
 
       <ConfirmModal
         visible={deleteFor !== null}
-        title="Delete playlist?"
-        message={`"${nameOf(deleteFor)}" will be deleted. Your songs stay on the phone.`}
-        confirmLabel="Delete"
+        title={t("playlist.deleteTitle")}
+        message={t("playlist.deleteText", { name: nameOf(deleteFor) })}
         onCancel={() => setDeleteFor(null)}
         onConfirm={() => {
           const id = deleteFor;
           const name = nameOf(id);
           setDeleteFor(null);
           if (id !== null)
-            deletePlaylist(id).then(() => showToast(`Deleted ${name}`));
+            deletePlaylist(id).then(() =>
+              showToast(t("toast.deleted", { name })),
+            );
         }}
       />
 

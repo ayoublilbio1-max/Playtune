@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { SORT_OPTIONS, type SortKey } from "../constants/sort";
 import { useTheme } from "../hooks/use-theme";
+import { useT } from "../i18n";
 import { AppText } from "./AppText";
 import { Overlay } from "./Overlay";
 
@@ -15,11 +16,12 @@ type Props = {
 
 export function SortSheet({ visible, value, onSelect, onClose }: Props) {
   const colors = useTheme();
+  const { t } = useT();
 
   return (
     <Overlay visible={visible} onClose={onClose}>
       <AppText variant="heading" style={styles.title}>
-        Sort songs by
+        {t("sort.heading")}
       </AppText>
       {SORT_OPTIONS.map((option) => {
         const selected = option.key === value;
@@ -42,10 +44,10 @@ export function SortSheet({ visible, value, onSelect, onClose }: Props) {
                 weight={selected ? "semibold" : "regular"}
                 color={selected ? colors.accent : undefined}
               >
-                {option.label}
+                {t(option.label)}
               </AppText>
               <AppText variant="label" muted>
-                {option.hint}
+                {t(option.hint)}
               </AppText>
             </View>
             <Ionicons

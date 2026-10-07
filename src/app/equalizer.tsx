@@ -7,6 +7,7 @@ import { ScreenHeader } from "../components/ScreenHeader";
 import { Slider } from "../components/Slider";
 import { equalizer, type EqualizerInfo } from "../engine/engine";
 import { useTheme } from "../hooks/use-theme";
+import { useT } from "../i18n";
 
 /** Engine calls while a finger drags a slider: at most one every 90 ms (the final value is always sent). */
 const LIVE_INTERVAL_MS = 90;
@@ -30,6 +31,7 @@ function formatDb(levelMb: number) {
 export default function EqualizerScreen() {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
+  const { t } = useT();
   const [info, setInfo] = useState<EqualizerInfo | null>(null);
   const [error, setError] = useState("");
   /** Band levels shown while dragging (millibels). */
@@ -69,7 +71,7 @@ export default function EqualizerScreen() {
           { backgroundColor: colors.background, paddingTop: insets.top },
         ]}
       >
-        <ScreenHeader title="Equalizer" />
+        <ScreenHeader title={t("menu.equalizer")} />
         <View style={styles.center}>
           <AppText muted align="center">
             {error}
@@ -87,7 +89,7 @@ export default function EqualizerScreen() {
           { backgroundColor: colors.background, paddingTop: insets.top },
         ]}
       >
-        <ScreenHeader title="Equalizer" />
+        <ScreenHeader title={t("menu.equalizer")} />
       </View>
     );
   }
@@ -100,10 +102,10 @@ export default function EqualizerScreen() {
           { backgroundColor: colors.background, paddingTop: insets.top },
         ]}
       >
-        <ScreenHeader title="Equalizer" />
+        <ScreenHeader title={t("menu.equalizer")} />
         <View style={styles.center}>
           <AppText muted align="center">
-            This phone doesn't support an equalizer.
+            {t("eq.unsupported")}
           </AppText>
         </View>
       </View>
@@ -142,7 +144,7 @@ export default function EqualizerScreen() {
         { backgroundColor: colors.background, paddingTop: insets.top },
       ]}
     >
-      <ScreenHeader title="Equalizer" />
+      <ScreenHeader title={t("menu.equalizer")} />
 
       <View style={styles.content}>
         <View
@@ -153,9 +155,9 @@ export default function EqualizerScreen() {
           ]}
         >
           <View style={styles.flex}>
-            <AppText weight="semibold">Equalizer</AppText>
+            <AppText weight="semibold">{t("menu.equalizer")}</AppText>
             <AppText variant="caption" muted>
-              {enabled ? "On — applies to every song" : "Off"}
+              {enabled ? t("eq.on") : t("eq.off")}
             </AppText>
           </View>
           <Switch
@@ -172,7 +174,7 @@ export default function EqualizerScreen() {
           style={styles.presetScroll}
           contentContainerStyle={styles.presets}
         >
-          {info.preset === -1 ? <Chip label="Custom" selected /> : null}
+          {info.preset === -1 ? <Chip label={t("eq.custom")} selected /> : null}
           {presets.map((name, index) => (
             <Chip
               key={`${index}-${name}`}
@@ -249,7 +251,7 @@ export default function EqualizerScreen() {
 
         {info.bassSupported ? (
           <StrengthRow
-            label="Bass boost"
+            label={t("eq.bass")}
             strength={info.bassStrength ?? 0}
             dimmed={!enabled}
             onLive={(s) =>
@@ -267,7 +269,7 @@ export default function EqualizerScreen() {
 
         {info.virtualizerSupported ? (
           <StrengthRow
-            label="Virtualizer"
+            label={t("eq.virtualizer")}
             strength={info.virtualizerStrength ?? 0}
             dimmed={!enabled}
             onLive={(s) =>

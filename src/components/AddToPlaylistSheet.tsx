@@ -1,13 +1,18 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
+import type { ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-import type { EngineSong } from "../engine/engine";
+import { PlaytuneEngine, toQueueItem, type EngineSong } from "../engine/engine";
 import { usePlaylistCover } from "../hooks/use-artwork";
 import { useTheme } from "../hooks/use-theme";
+import { t as tNow, useT } from "../i18n";
+import { hideSongs } from "../store/library";
+import { getPlayer } from "../store/player";
 import {
   addSongsToPlaylist,
+  playlistName,
   usePlaylists,
   type Playlist,
 } from "../store/playlists";
@@ -21,11 +26,76 @@ type Props = {
   onClose: () => void;
   /** "New playlist" tapped: the screen asks for a name, creates it and adds the song. */
   onNewPlaylist: (song: EngineSong) => void;
+  /** Play next / Add to queue / Hide row at the top (off on the Player screen). */
+  showActions?: boolean;
 };
 
-/** Long-press a song (or tap ⋮): choose a playlist to add it to. */
-export function AddToPlaylistSheet({ song, onClose, onNewPlaylist }: Props) {
+/** Adds songs to the queue: right after the current song, or at the end. Starts playing if nothing is queued. */
+export async function queueSongs(songs: EngineSong[], playNext: boolean) {
+  if (songs.length === 0) return;
+  const empty = getPlayer().queueLength === 0;
+  try {
+    if (empty) {
+      await PlaytuneEngine.setQueue(songs.map(toQueueItem), 0, 0, true);
+    } else {
+      await PlaytuneEngine.addToQueue(songs.map(toQueueItem), playNext);
+    }
+    if (__DEV__)
+      console.log(
+        `[queue] ${playNext ? "play next" : "add to end"}: ${songs.length} songs (was empty: ${empty})`,
+      );
+    showToast(
+      empty
+        ? tNow("toast.playing")
+        : playNext
+          ? tNow("toast.playNext")
+          : tNow("toast.addedToQueue"),
+    );
+  } catch (e) {
+    if (__DEV__) console.log(`[queue] add failed — ${String(e)}`);
+  }
+}
+
+function Action({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: ReactNode;
+  label: string;
+  onPress: () => void;
+}) {
   const colors = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.action,
+        { backgroundColor: colors.surfaceRaised, opacity: pressed ? 0.7 : 1 },
+      ]}
+    >
+      {icon}
+      <AppText
+        variant="caption"
+        weight="medium"
+        align="center"
+        numberOfLines={1}
+      >
+        {label}
+      </AppText>
+    </Pressable>
+  );
+}
+
+/** Long-press a song (or tap ⋮): play next, add to queue, hide, or add it to a playlist. */
+export function AddToPlaylistSheet({
+  song,
+  onClose,
+  onNewPlaylist,
+  showActions = true,
+}: Props) {
+  const colors = useTheme();
+  const { t } = useT();
   const playlists = usePlaylists((s) => s.playlists);
 
   const add = async (playlist: Playlist) => {
@@ -35,22 +105,87 @@ export function AddToPlaylistSheet({ song, onClose, onNewPlaylist }: Props) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
       () => {},
     );
+    const name = playlistName(playlist);
     showToast(
-      added > 0 ? `Added to ${playlist.name}` : `Already in ${playlist.name}`,
+      added > 0
+        ? tNow("toast.addedTo", { name })
+        : tNow("toast.alreadyIn", { name }),
     );
+  };
+
+  const queue = (playNext: boolean) => {
+    if (!song) return;
+    onClose();
+    queueSongs([song], playNext);
+  };
+
+  const hide = () => {
+    if (!song) return;
+    onClose();
+    hideSongs([song.id]);
+    showToast(tNow("toast.hidden", { title: song.title }));
   };
 
   return (
     <Overlay visible={song !== null} onClose={onClose}>
-      <AppText variant="heading">Add to playlist</AppText>
+      <AppText variant="heading" numberOfLines={1}>
+        {showActions ? song?.title : t("sheet.addToPlaylist")}
+      </AppText>
       <AppText
         variant="caption"
         muted
         numberOfLines={1}
         style={styles.subtitle}
       >
-        {song?.title}
+        {showActions
+          ? song?.artist?.trim()
+            ? song.artist
+            : t("common.unknownArtist")
+          : song?.title}
       </AppText>
+
+      {showActions ? (
+        <>
+          <View style={styles.actions}>
+            <Action
+              icon={
+                <MaterialCommunityIcons
+                  name="playlist-play"
+                  size={24}
+                  color={colors.accent}
+                />
+              }
+              label={t("sheet.playNext")}
+              onPress={() => queue(true)}
+            />
+            <Action
+              icon={
+                <MaterialCommunityIcons
+                  name="playlist-plus"
+                  size={24}
+                  color={colors.purple}
+                />
+              }
+              label={t("sheet.addToQueue")}
+              onPress={() => queue(false)}
+            />
+            <Action
+              icon={
+                <Ionicons
+                  name="eye-off-outline"
+                  size={22}
+                  color={colors.textMuted}
+                />
+              }
+              label={t("sheet.hide")}
+              onPress={hide}
+            />
+          </View>
+          <AppText variant="label" muted style={styles.section}>
+            {t("sheet.addToPlaylist").toUpperCase()}
+          </AppText>
+        </>
+      ) : null}
 
       <Pressable
         onPress={() => {
@@ -68,7 +203,7 @@ export function AddToPlaylistSheet({ song, onClose, onNewPlaylist }: Props) {
           <Ionicons name="add" size={24} color={colors.white} />
         </View>
         <AppText weight="semibold" style={styles.flex}>
-          New playlist
+          {t("common.newPlaylist")}
         </AppText>
       </Pressable>
 
@@ -96,6 +231,7 @@ function PlaylistOption({
   onPress: (p: Playlist) => void;
 }) {
   const colors = useTheme();
+  const { t, tn } = useT();
   const cover = usePlaylistCover(playlist.songIds, 128);
   const count = playlist.songIds.length;
 
@@ -115,18 +251,18 @@ function PlaylistOption({
           contentFit="cover"
         />
       ) : (
-        <ArtworkPlaceholder width={44} radius={10} />
+        <ArtworkPlaceholder
+          width={44}
+          radius={10}
+          icon={playlist.kind === "liked" ? "heart" : "musical-note"}
+        />
       )}
       <View style={styles.flex}>
         <AppText weight="medium" numberOfLines={1}>
-          {playlist.name}
+          {playlist.kind === "liked" ? t("common.likedSongs") : playlist.name}
         </AppText>
         <AppText variant="label" muted>
-          {contains
-            ? "Already added"
-            : count === 1
-              ? "1 song"
-              : `${count} songs`}
+          {contains ? t("sheet.alreadyAdded") : tn("songs", count)}
         </AppText>
       </View>
       <Ionicons
@@ -142,8 +278,27 @@ const styles = StyleSheet.create({
   subtitle: {
     marginBottom: 12,
   },
+  actions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  action: {
+    flex: 1,
+    height: 68,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: 4,
+  },
+  section: {
+    marginTop: 16,
+    marginBottom: 2,
+    letterSpacing: 1,
+  },
   list: {
     flexGrow: 0,
+    maxHeight: 260,
   },
   row: {
     flexDirection: "row",

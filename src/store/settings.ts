@@ -21,12 +21,27 @@ function loadMinSong(): MinSongSeconds {
   }
 }
 
+const PAUSE_ON_DETACH_KEY = "playtune.pauseOnDetach";
+
+function loadPauseOnDetach(): boolean {
+  try {
+    return Storage.getItemSync(PAUSE_ON_DETACH_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
 type SettingsState = {
   /** Songs shorter than this are left out of the library (voice notes, ringtones, short clips). */
   minSongSeconds: MinSongSeconds;
+  /** Pause when headphones or Bluetooth disconnect. */
+  pauseOnDetach: boolean;
 };
 
-const store = createStore<SettingsState>({ minSongSeconds: loadMinSong() });
+const store = createStore<SettingsState>({
+  minSongSeconds: loadMinSong(),
+  pauseOnDetach: loadPauseOnDetach(),
+});
 
 export const useSettings = store.useStore;
 export const getSettings = store.get;
@@ -39,4 +54,13 @@ export function setMinSongSeconds(value: MinSongSeconds) {
     if (__DEV__) console.log(`[settings] could not save — ${String(e)}`);
   }
   if (__DEV__) console.log(`[settings] skip songs shorter than ${value}s`);
+}
+
+export function setPauseOnDetach(value: boolean) {
+  store.set({ pauseOnDetach: value });
+  try {
+    Storage.setItemSync(PAUSE_ON_DETACH_KEY, String(value));
+  } catch (e) {
+    if (__DEV__) console.log(`[settings] could not save — ${String(e)}`);
+  }
 }

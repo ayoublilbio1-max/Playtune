@@ -100,6 +100,26 @@ export default function RootLayout() {
           name="settings"
           options={{ animation: "slide_from_right" }}
         />
+        <Stack.Screen
+          name="queue"
+          options={{ animation: "slide_from_bottom" }}
+        />
+        <Stack.Screen
+          name="collection/[kind]"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="hide-music"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="transfer"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="terms"
+          options={{ animation: "slide_from_right" }}
+        />
       </Stack>
     </GestureHandlerRootView>
   );

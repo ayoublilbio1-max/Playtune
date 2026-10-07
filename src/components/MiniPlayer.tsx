@@ -3,9 +3,10 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { displayArtist, PlaytuneEngine } from "../engine/engine";
+import { PlaytuneEngine } from "../engine/engine";
 import { usePlaybackProgress } from "../hooks/use-playback-progress";
 import { useTheme } from "../hooks/use-theme";
+import { useT } from "../i18n";
 import { useLibrary } from "../store/library";
 import { usePlayer } from "../store/player";
 import { AppText } from "./AppText";
@@ -26,11 +27,14 @@ const DISC_SIZE = 42; // = title line (21) + artist line (18) + small gap
 export function MiniPlayer() {
   const colors = useTheme();
   const insets = useSafeAreaInsets();
+  const { t } = useT();
 
   const mediaId = usePlayer((s) => s.mediaId);
   const repeatMode = usePlayer((s) => s.repeatMode);
   const queueLength = usePlayer((s) => s.queueLength);
-  const song = useLibrary((s) => (mediaId ? s.byId.get(mediaId) : undefined));
+  const song = useLibrary((s) =>
+    mediaId ? s.allById.get(mediaId) : undefined,
+  );
   const { positionMs, durationMs, isPlaying, focused, resetKey, seekTo, stop } =
     usePlaybackProgress();
 
@@ -63,10 +67,10 @@ export function MiniPlayer() {
         />
         <View style={styles.texts}>
           <AppText weight="semibold" numberOfLines={1}>
-            {song?.title ?? "Unknown song"}
+            {song?.title ?? t("common.unknownSong")}
           </AppText>
           <AppText variant="caption" muted numberOfLines={1}>
-            {displayArtist(song?.artist)}
+            {song?.artist?.trim() ? song.artist : t("common.unknownArtist")}
           </AppText>
         </View>
       </Pressable>

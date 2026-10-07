@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { useTheme } from "../hooks/use-theme";
+import { useT } from "../i18n";
 import { AppText } from "./AppText";
 import { Overlay } from "./Overlay";
 
@@ -28,13 +29,14 @@ export function ConfirmModal({
   title,
   message,
   icon = "trash-outline",
-  confirmLabel = "Delete",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   destructive = true,
   onConfirm,
   onCancel,
 }: Props) {
   const colors = useTheme();
+  const { t } = useT();
   const confirmColor = destructive ? colors.danger : colors.accent;
 
   return (
@@ -66,7 +68,9 @@ export function ConfirmModal({
             ]}
             onPress={onCancel}
           >
-            <AppText weight="semibold">{cancelLabel}</AppText>
+            <AppText weight="semibold">
+              {cancelLabel ?? t("common.cancel")}
+            </AppText>
           </Pressable>
           <Pressable
             style={({ pressed }) => [
@@ -81,7 +85,7 @@ export function ConfirmModal({
             }}
           >
             <AppText weight="semibold" color={colors.white}>
-              {confirmLabel}
+              {confirmLabel ?? t("common.delete")}
             </AppText>
           </Pressable>
         </View>
