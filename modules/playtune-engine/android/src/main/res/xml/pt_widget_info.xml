@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 4×2 widget. No timed updates: the player service redraws it when the song or play state changes. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:description="@string/pt_widget_description"
+  android:initialLayout="@layout/pt_widget"
+  android:minWidth="250dp"
+  android:minHeight="110dp"
+  android:minResizeWidth="250dp"
+  android:minResizeHeight="110dp"
+  android:previewImage="@drawable/pt_widget_art_placeholder"
+  android:previewLayout="@layout/pt_widget"
+  android:resizeMode="horizontal|vertical"
+  android:targetCellWidth="4"
+  android:targetCellHeight="2"
+  android:updatePeriodMillis="0"
+  android:widgetCategory="home_screen" />

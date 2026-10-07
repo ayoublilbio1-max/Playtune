@@ -236,6 +236,15 @@ export const fr: Dictionary = {
   "terms.contactBody":
     "Questions ou problèmes : contactez {developer} sur Fiverr.",
 
+  "lyrics.title": "Paroles",
+  "lyrics.synced": "Synchronisées",
+  "lyrics.noneTitle": "Pas de paroles pour ce titre",
+  "lyrics.noneText":
+    "Les paroles sont lues dans le fichier du titre (tags MP3, FLAC, M4A). Ajoutez-les avec un éditeur de tags — les lignes avec des temps [mm:ss] défilent avec la musique.",
+  "lyrics.updateTitle": "Les paroles demandent la nouvelle version",
+  "lyrics.updateText":
+    "Cette version de Playtune ne lit pas encore les paroles. Installez la dernière mise à jour pour les voir.",
+
   "toast.addedTo": "Ajouté à {name}",
   "toast.alreadyIn": "Déjà dans {name}",
   "toast.addedSongs_one": "{count} titre ajouté",

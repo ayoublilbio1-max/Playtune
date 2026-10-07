@@ -234,6 +234,15 @@ export const es: Dictionary = {
   "terms.contactBody":
     "Preguntas o problemas: contacta con {developer} en Fiverr.",
 
+  "lyrics.title": "Letra",
+  "lyrics.synced": "Sincronizada",
+  "lyrics.noneTitle": "Esta canción no tiene letra",
+  "lyrics.noneText":
+    "La letra se lee del archivo de la canción (etiquetas MP3, FLAC, M4A). Añádela con un editor de etiquetas: las líneas con tiempos [mm:ss] avanzan con la música.",
+  "lyrics.updateTitle": "La letra necesita la nueva versión",
+  "lyrics.updateText":
+    "Esta versión de Playtune aún no lee letras. Instala la última actualización para verlas.",
+
   "toast.addedTo": "Añadida a {name}",
   "toast.alreadyIn": "Ya está en {name}",
   "toast.addedSongs_one": "{count} canción añadida",

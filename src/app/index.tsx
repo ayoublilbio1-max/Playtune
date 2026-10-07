@@ -44,6 +44,7 @@ import {
   getPlaylists,
   loadPlaylists,
 } from "../store/playlists";
+import { resumeLastSession } from "../store/resume";
 
 const TABS: { key: LibraryTab; label: TKey }[] = [
   { key: "songs", label: "browse.songs" },
@@ -84,6 +85,11 @@ export default function HomeScreen() {
     initLibrary();
     loadPlaylists();
   }, []);
+
+  // Resume on launch: last song ready (paused) once the songs are known.
+  useEffect(() => {
+    if (status === "ready") resumeLastSession();
+  }, [status]);
 
   // Hide the splash once, as soon as we know what to show (songs, permission screen or error).
   useEffect(() => {

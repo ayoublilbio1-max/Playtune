@@ -22,6 +22,8 @@ declare class PlaytuneEngineModule extends NativeModule<PlaytuneEngineEvents> {
   /** file:// uri of a cached JPEG, or null if the song has no artwork */
   getArtwork(id: string, size: number): Promise<string | null>;
   clearArtworkCache(): Promise<number>;
+  /** Lyrics saved inside the song file (ID3 / FLAC / M4A tags), or null. Added in v1.5.0's build. */
+  getLyrics?(id: string): Promise<string | null>;
   getLastSession(): Promise<LastSession>;
 
   // Queue
@@ -60,7 +62,7 @@ declare class PlaytuneEngineModule extends NativeModule<PlaytuneEngineEvents> {
 
   /**
    * Pause when headphones / Bluetooth disconnect (on by default).
-   * Added in the next native build: older app builds don't have it, so call it through engine.ts.
+   * Added in v1.5.0's build: older app builds don't have it, so call it through engine.ts.
    */
   setPauseOnDetach?(enabled: boolean): Promise<boolean>;
 

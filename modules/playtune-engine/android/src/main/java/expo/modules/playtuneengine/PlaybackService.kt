@@ -13,6 +13,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -62,6 +63,7 @@ class PlaybackService : MediaSessionService() {
   }
 
   private var session: MediaSession? = null
+  private var exoPlayer: ExoPlayer? = null
   private var errorStreak = 0
 
   // Sleep timer (runs here, in the background service, so it works with the screen off / app closed).
@@ -85,7 +87,8 @@ class PlaybackService : MediaSessionService() {
           .build(),
         /* handleAudioFocus= */ true
       )
-      .setHandleAudioBecomingNoisy(true) // pause when headphones are unplugged
+      // Pause when headphones / Bluetooth disconnect (Settings › Pause on detach, on by default).
+      .setHandleAudioBecomingNoisy(prefs.getBoolean("pauseOnDetach", true))
       .setWakeMode(C.WAKE_MODE_LOCAL)
       .build()
 
@@ -94,6 +97,7 @@ class PlaybackService : MediaSessionService() {
     player.repeatMode = if (savedRepeat == Player.REPEAT_MODE_ONE) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
     player.shuffleModeEnabled = false
     player.addListener(playerListener)
+    exoPlayer = player
 
     equalizer = EqualizerManager(this)
     equalizer.attach(player.audioSessionId)
@@ -119,6 +123,7 @@ class PlaybackService : MediaSessionService() {
       .build()
 
     instance = this
+    PlaytuneWidget.refresh(this, player)
     Log.d(TAG, "[service] created — audioSession=${player.audioSessionId} repeat=${player.repeatMode}")
   }
 
@@ -128,6 +133,7 @@ class PlaybackService : MediaSessionService() {
     Log.d(TAG, "[service] destroyed")
     handler.removeCallbacks(sleepTick)
     sleepEndAt = 0L
+    PlaytuneWidget.refreshStopped(this)
     session?.let { s ->
       saveSession(s.player)
       s.player.removeListener(playerListener)
@@ -135,6 +141,7 @@ class PlaybackService : MediaSessionService() {
       s.release()
     }
     session = null
+    exoPlayer = null
     equalizer.release()
     instance = null
     super.onDestroy()
@@ -154,6 +161,16 @@ class PlaybackService : MediaSessionService() {
       intent,
       PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
     )
+  }
+
+  /** The session's player (for the home-screen widget). Null when the service isn't ready. */
+  fun currentPlayer(): Player? = session?.player
+
+  /** Settings › Pause on detach. Saved, so it also applies after the service restarts. */
+  fun setPauseOnDetach(enabled: Boolean) {
+    prefs().edit().putBoolean("pauseOnDetach", enabled).apply()
+    exoPlayer?.setHandleAudioBecomingNoisy(enabled)
+    Log.d(TAG, "[detach] pause on detach → $enabled")
   }
 
   // ---------- Sleep timer ----------
@@ -260,11 +277,21 @@ class PlaybackService : MediaSessionService() {
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
       if (isPlaying) errorStreak = 0
-      session?.player?.let { saveSession(it) }
+      session?.player?.let {
+        saveSession(it)
+        PlaytuneWidget.refresh(this@PlaybackService, it)
+      }
+    }
+
+    override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+      PlaytuneWidget.refresh(this@PlaybackService, session?.player)
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-      session?.player?.let { saveSession(it) }
+      session?.player?.let {
+        saveSession(it)
+        PlaytuneWidget.refresh(this@PlaybackService, it)
+      }
       Log.d(TAG, "[service] now playing ${mediaItem?.mediaId} (reason $reason)")
     }
 

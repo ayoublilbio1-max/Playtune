@@ -2,7 +2,7 @@
   "expo": {
     "name": "Playtune",
     "slug": "Playtune",
-    "version": "1.0.0",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "playtune",
@@ -12,8 +12,7 @@
       "package": "com.ayoubghcoding.playtune",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "monochromeImage": "./assets/images/monochrome-icon.png",
-        "backgroundColor": "#19012B"
+        "monochromeImage": "./assets/images/monochrome-icon.png"
       },
       "predictiveBackGestureEnabled": false
     },

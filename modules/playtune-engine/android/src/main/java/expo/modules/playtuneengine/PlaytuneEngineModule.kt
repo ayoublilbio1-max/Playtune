@@ -107,6 +107,20 @@ class PlaytuneEngineModule : Module() {
       count
     }
 
+    /** Lyrics saved inside the song file (ID3 / FLAC / M4A tags), or null. Runs off the main thread. */
+    AsyncFunction("getLyrics") { id: String ->
+      id.toLongOrNull()?.let { LyricsReader.read(context, it) }
+    }
+
+    /** Settings › Pause on detach (headphones / Bluetooth disconnect). Saved for the next service start too. */
+    AsyncFunction("setPauseOnDetach") { enabled: Boolean ->
+      context.getSharedPreferences(PlaybackService.PREFS, Context.MODE_PRIVATE)
+        .edit().putBoolean("pauseOnDetach", enabled).apply()
+      PlaybackService.instance?.setPauseOnDetach(enabled)
+      Log.d(tag, "[detach] pause on detach → $enabled (service ${if (PlaybackService.instance != null) "running" else "not running"})")
+      true
+    }.runOnQueue(Queues.MAIN)
+
     AsyncFunction("getLastSession") { ->
       val prefs = context.getSharedPreferences(PlaybackService.PREFS, Context.MODE_PRIVATE)
       val queue = prefs.getString("queue", "") ?: ""

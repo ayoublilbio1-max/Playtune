@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen widget colours (Playtune brand: deep purple, hot magenta, electric purple). -->
+<resources>
+  <color name="pt_widget_bg_start">#4D154B</color>
+  <color name="pt_widget_bg_center">#261037</color>
+  <color name="pt_widget_bg_end">#19012B</color>
+  <color name="pt_widget_border">#59E401E3</color>
+  <color name="pt_widget_accent">#E401E3</color>
+  <color name="pt_widget_purple">#7C09F1</color>
+  <color name="pt_widget_text">#FFFFFF</color>
+  <color name="pt_widget_text_muted">#B3FFFFFF</color>
+  <color name="pt_widget_button">#24FFFFFF</color>
+</resources>

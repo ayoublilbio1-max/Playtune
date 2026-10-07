@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="pt_widget_label">Playtune</string>
+  <string name="pt_widget_brand">PLAYTUNE</string>
+  <string name="pt_widget_description">Now playing, with play / pause and next</string>
+  <string name="pt_widget_empty">Tap to pick a song</string>
+  <string name="pt_widget_unknown_song">Unknown song</string>
+  <string name="pt_widget_unknown_artist">Unknown artist</string>
+  <string name="pt_widget_play">Play</string>
+  <string name="pt_widget_pause">Pause</string>
+  <string name="pt_widget_next">Next</string>
+  <string name="pt_widget_previous">Previous</string>
+</resources>

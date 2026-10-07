@@ -236,6 +236,15 @@ export const de: Dictionary = {
   "terms.contactBody":
     "Fragen oder Probleme: Kontaktiere {developer} auf Fiverr.",
 
+  "lyrics.title": "Songtext",
+  "lyrics.synced": "Synchron",
+  "lyrics.noneTitle": "Kein Songtext in diesem Song",
+  "lyrics.noneText":
+    "Songtexte werden aus der Songdatei gelesen (MP3-, FLAC-, M4A-Tags). Füge sie mit einem Tag-Editor hinzu — Zeilen mit [mm:ss]-Zeiten laufen mit der Musik mit.",
+  "lyrics.updateTitle": "Songtexte brauchen die neue App-Version",
+  "lyrics.updateText":
+    "Diese Version von Playtune kann noch keine Songtexte lesen. Installiere das neueste Update, um sie zu sehen.",
+
   "toast.addedTo": "Zu {name} hinzugefügt",
   "toast.alreadyIn": "Schon in {name}",
   "toast.addedSongs_one": "{count} Song hinzugefügt",

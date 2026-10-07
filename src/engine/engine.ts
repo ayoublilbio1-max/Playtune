@@ -97,7 +97,26 @@ export async function playSongs(
  * Pause on detach (headphones unplugged). The engine already pauses by default;
  * turning it off needs the next native build. Returns false if this build can't change it yet.
  */
-/** True when this app build can switch "pause on detach" off (added in the next native build). */
+/** Lyrics of a song, read from the file's tags. `undefined` = this app build can't read lyrics yet. */
+export async function readLyrics(
+  id: string,
+): Promise<string | null | undefined> {
+  if (typeof PlaytuneEngine.getLyrics !== "function") return undefined;
+  const start = Date.now();
+  try {
+    const text = await PlaytuneEngine.getLyrics(id);
+    if (__DEV__)
+      console.log(
+        `[lyrics] ${id}: ${text ? `${text.length} chars` : "none"} in ${Date.now() - start}ms`,
+      );
+    return text;
+  } catch (e) {
+    if (__DEV__) console.log(`[lyrics] ${id}: failed — ${String(e)}`);
+    return null;
+  }
+}
+
+/** True when this app build can switch "pause on detach" off (added in the v1.5.0 build). */
 export function canChangePauseOnDetach(): boolean {
   return typeof PlaytuneEngine.setPauseOnDetach === "function";
 }

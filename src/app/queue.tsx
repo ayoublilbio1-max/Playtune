@@ -12,9 +12,9 @@ import { SongRow } from "../components/SongRow";
 import { SongListSkeleton } from "../components/SongRowSkeleton";
 import { showToast, Toast } from "../components/Toast";
 import {
-    formatTotalDuration,
-    PlaytuneEngine,
-    type EngineSong,
+  formatTotalDuration,
+  PlaytuneEngine,
+  type EngineSong,
 } from "../engine/engine";
 import { useTheme } from "../hooks/use-theme";
 import { useT } from "../i18n";
@@ -61,8 +61,13 @@ export default function QueueScreen() {
   }, []);
 
   // On open, and whenever the engine changes the queue or moves to another song.
+  // Short delay: one song change sends several player events, so the queue is read once after them.
   useEffect(() => {
-    refresh(`queue ${queueLength}, index ${currentIndex}`);
+    const id = setTimeout(
+      () => refresh(`queue ${queueLength}, index ${currentIndex}`),
+      120,
+    );
+    return () => clearTimeout(id);
   }, [queueLength, mediaId, currentIndex, refresh]);
 
   const songs = useMemo(

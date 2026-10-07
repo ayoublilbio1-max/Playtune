@@ -246,6 +246,15 @@ export const en = {
   "terms.contactTitle": "Contact",
   "terms.contactBody": "Questions or problems: contact {developer} on Fiverr.",
 
+  "lyrics.title": "Lyrics",
+  "lyrics.synced": "Synced",
+  "lyrics.noneTitle": "No lyrics in this song",
+  "lyrics.noneText":
+    "Lyrics are read from the song file (MP3, FLAC, M4A tags). Add them with a tag editor — lines with [mm:ss] times scroll with the music.",
+  "lyrics.updateTitle": "Lyrics need the new app version",
+  "lyrics.updateText":
+    "This version of Playtune can’t read lyrics yet. Install the latest update to see them.",
+
   // Toasts
   "toast.addedTo": "Added to {name}",
   "toast.alreadyIn": "Already in {name}",

@@ -216,6 +216,13 @@ export default function PlayerScreen() {
         <View style={styles.headerRight}>
           <IconButton
             family="mci"
+            name="text-box-outline"
+            size={24}
+            accessibilityLabel={t("lyrics.title")}
+            onPress={() => router.push("/lyrics")}
+          />
+          <IconButton
+            family="mci"
             name="playlist-play"
             size={26}
             accessibilityLabel={t("menu.queue")}
