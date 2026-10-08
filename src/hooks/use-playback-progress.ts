@@ -1,12 +1,14 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AppState } from "react-native";
 
 import { PlaytuneEngine, stopToStart } from "../engine/engine";
 import { usePlayer } from "../store/player";
 
 /**
  * Position / duration of the current song for a screen, plus seek and stop helpers.
- * Polls the engine twice per second only while music plays AND the screen is visible.
+ * Polls the engine twice per second only while music plays, the screen is visible AND the app is open
+ * (no polling while you use another app, so the phone has more time for the music).
  */
 export function usePlaybackProgress() {
   const mediaId = usePlayer((s) => s.mediaId);
@@ -17,6 +19,9 @@ export function usePlaybackProgress() {
   const [progress, setProgress] = useState({ positionMs: 0, durationMs: 0 });
   const [resetKey, setResetKey] = useState(0);
   const [focused, setFocused] = useState(true);
+  const [appActive, setAppActive] = useState(
+    AppState.currentState === "active",
+  );
   const ignorePollsUntil = useRef(0);
   const latest = useRef(progress);
 
@@ -31,13 +36,20 @@ export function usePlaybackProgress() {
     }, []),
   );
 
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) =>
+      setAppActive(state === "active"),
+    );
+    return () => sub.remove();
+  }, []);
+
   // Position from player events (track change, pause, seek…).
   useEffect(() => {
     setProgress({ positionMs: statePosition, durationMs: stateDuration });
   }, [statePosition, stateDuration, mediaId]);
 
   useEffect(() => {
-    if (!isPlaying || !focused) return;
+    if (!isPlaying || !focused || !appActive) return;
     let alive = true;
     const tick = () => {
       PlaytuneEngine.getProgress()
@@ -53,7 +65,7 @@ export function usePlaybackProgress() {
       alive = false;
       clearInterval(id);
     };
-  }, [isPlaying, focused, mediaId]);
+  }, [isPlaying, focused, appActive, mediaId]);
 
   const seekTo = useCallback((ms: number) => {
     ignorePollsUntil.current = Date.now() + 700;

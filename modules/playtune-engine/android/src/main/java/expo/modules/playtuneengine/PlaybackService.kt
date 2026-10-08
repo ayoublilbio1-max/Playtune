@@ -17,7 +17,11 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioTrackBufferSizeProvider
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
@@ -52,6 +56,14 @@ class PlaybackService : MediaSessionService() {
     const val CMD_REPEAT = "playtune.REPEAT"
     const val CMD_CLOSE = "playtune.CLOSE"
 
+    /**
+     * Sound kept ready in the phone's audio output (Media3's default is 0.25–0.75 s).
+     * A bigger buffer means the music keeps playing smoothly while the phone is busy for a moment
+     * (opening another app, screen on/off), instead of a short cut.
+     */
+    private const val MIN_AUDIO_BUFFER_US = 1_000_000
+    private const val MAX_AUDIO_BUFFER_US = 2_000_000
+
     /** Sleep timer: the music fades out during the last 10 seconds, then pauses. */
     private const val SLEEP_FADE_MS = 10_000L
     private const val SLEEP_TICK_MS = 100L
@@ -79,7 +91,26 @@ class PlaybackService : MediaSessionService() {
     super.onCreate()
     val prefs = prefs()
 
-    val player = ExoPlayer.Builder(this)
+    // Same audio output as Media3's default, only with a bigger buffer (see MIN_AUDIO_BUFFER_US).
+    val renderers = object : DefaultRenderersFactory(this) {
+      override fun buildAudioSink(
+        context: Context,
+        enableFloatOutput: Boolean,
+        enableAudioOutputPlaybackParams: Boolean
+      ): AudioSink =
+        DefaultAudioSink.Builder(context)
+          .setEnableFloatOutput(enableFloatOutput)
+          .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
+          .setAudioTrackBufferSizeProvider(
+            DefaultAudioTrackBufferSizeProvider.Builder()
+              .setMinPcmBufferDurationUs(MIN_AUDIO_BUFFER_US)
+              .setMaxPcmBufferDurationUs(MAX_AUDIO_BUFFER_US)
+              .build()
+          )
+          .build()
+    }
+
+    val player = ExoPlayer.Builder(this, renderers)
       .setAudioAttributes(
         AudioAttributes.Builder()
           .setUsage(C.USAGE_MEDIA)
@@ -124,7 +155,7 @@ class PlaybackService : MediaSessionService() {
 
     instance = this
     PlaytuneWidget.refresh(this, player)
-    Log.d(TAG, "[service] created — audioSession=${player.audioSessionId} repeat=${player.repeatMode}")
+    Log.d(TAG, "[service] created — audioSession=${player.audioSessionId} repeat=${player.repeatMode} audioBuffer=${MIN_AUDIO_BUFFER_US / 1000}-${MAX_AUDIO_BUFFER_US / 1000}ms")
   }
 
   override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
