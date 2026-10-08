@@ -184,6 +184,13 @@ export function SideMenu({ visible, onClose }: Props) {
           />
           <MenuItem
             icon={
+              <Ionicons name="trophy-outline" size={22} color={colors.cyan} />
+            }
+            label={t("home.most")}
+            onPress={() => go(() => router.push("/most-played"))}
+          />
+          <MenuItem
+            icon={
               <MaterialCommunityIcons
                 name="playlist-play"
                 size={22}

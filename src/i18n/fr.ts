@@ -268,6 +268,13 @@ export const fr: Dictionary = {
     "« Écoutés récemment » et « Les plus écoutés » repartent de zéro. Vos titres et playlists ne changent pas.",
   "toast.historyCleared": "Historique d’écoute effacé",
 
+  "home.recentEmpty":
+    "Les titres écoutés 15 secondes ou plus apparaissent ici.",
+  "most.plays": "{count}×",
+  "most.emptyTitle": "Aucune écoute pour l’instant",
+  "most.emptyText":
+    "Écoutez des titres 15 secondes ou plus : vos préférés seront classés ici.",
+
   "toast.addedTo": "Ajouté à {name}",
   "toast.alreadyIn": "Déjà dans {name}",
   "toast.addedSongs_one": "{count} titre ajouté",

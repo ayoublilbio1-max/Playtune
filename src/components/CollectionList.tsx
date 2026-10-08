@@ -10,14 +10,14 @@ import { usePlaylistCover } from "../hooks/use-artwork";
 import { useTheme } from "../hooks/use-theme";
 import { useT } from "../i18n";
 import {
-    useCollections,
-    type Collection,
-    type CollectionKind,
+  useCollections,
+  type Collection,
+  type CollectionKind,
 } from "../store/collections";
 import { AppText } from "./AppText";
 import { ArtworkPlaceholder } from "./ArtworkPlaceholder";
 
-export type LibraryTab = "songs" | CollectionKind;
+export type LibraryTab = "songs" | "recent" | CollectionKind;
 
 type Props = {
   kind: CollectionKind;

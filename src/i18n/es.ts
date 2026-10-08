@@ -266,6 +266,13 @@ export const es: Dictionary = {
     "«Escuchadas recientemente» y «Las más escuchadas» empiezan de cero. Tus canciones y listas no cambian.",
   "toast.historyCleared": "Historial de escucha borrado",
 
+  "home.recentEmpty":
+    "Las canciones que escuches 15 segundos o más aparecen aquí.",
+  "most.plays": "{count}×",
+  "most.emptyTitle": "Aún no hay reproducciones",
+  "most.emptyText":
+    "Escucha canciones 15 segundos o más y tus favoritas aparecerán aquí.",
+
   "toast.addedTo": "Añadida a {name}",
   "toast.alreadyIn": "Ya está en {name}",
   "toast.addedSongs_one": "{count} canción añadida",

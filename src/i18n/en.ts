@@ -277,6 +277,13 @@ export const en = {
     "Recently played and Most played start again from zero. Your songs and playlists are not touched.",
   "toast.historyCleared": "Listening history cleared",
 
+  "home.recentEmpty":
+    "Songs you listen to for 15 seconds or more show up here.",
+  "most.plays": "{count}×",
+  "most.emptyTitle": "No plays yet",
+  "most.emptyText":
+    "Listen to songs for 15 seconds or more and your favourites will rank here.",
+
   // Toasts
   "toast.addedTo": "Added to {name}",
   "toast.alreadyIn": "Already in {name}",

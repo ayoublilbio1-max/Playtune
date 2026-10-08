@@ -18,6 +18,8 @@ export type AppColors = {
   white: string;
   glowPink: string;
   mutedPurple: string;
+  /** Liked ♥ (Player screen). */
+  heart: string;
 
   // Text
   textPrimary: string;
@@ -54,6 +56,7 @@ const brand = {
   neonBlue: "#1C9EEF", // Neon Blue
   white: "#FFFFFF",
   glowPink: "#F7CCE9", // Soft Glow Pink
+  heart: "#FF003C", // Liked heart red
   outerGradient: ["#F70AAE", "#E401E3", "#7C09F1", "#4AC4F4"] as const,
   innerGradient: ["#7C09F1", "#5C08F5", "#3D08F8", "#1C9EEF"] as const,
   placeholderGradient: ["#E401E3", "#7C09F1", "#19012B"] as const,

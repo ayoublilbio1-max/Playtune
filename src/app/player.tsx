@@ -47,7 +47,7 @@ function goBack() {
   else router.replace("/");
 }
 
-/** ♥ with a small "pop" when tapped. Muted when not liked, magenta when liked. */
+/** ♥ with a small "pop" when tapped. Muted when not liked, pink while pressed, red (#FF003C) when liked. */
 function LikeButton({
   liked,
   onPress,
@@ -84,7 +84,9 @@ function LikeButton({
           <Ionicons
             name={liked ? "heart" : "heart-outline"}
             size={28}
-            color={liked || pressed ? colors.accent : colors.textMuted}
+            color={
+              liked ? colors.heart : pressed ? colors.pink : colors.textMuted
+            }
           />
         </Animated.View>
       )}
@@ -355,7 +357,8 @@ export default function PlayerScreen() {
         <IconButton
           name="play-back"
           size={32}
-          color={colors.accent}
+          color={colors.overlay}
+          pressedColor={colors.accent}
           accessibilityLabel="Previous"
           onPress={() => PlaytuneEngine.previous().catch(() => {})}
         />
@@ -372,7 +375,8 @@ export default function PlayerScreen() {
         <IconButton
           name="play-forward"
           size={32}
-          color={colors.accent}
+          color={colors.overlay}
+          pressedColor={colors.accent}
           accessibilityLabel="Next"
           onPress={() => PlaytuneEngine.next().catch(() => {})}
         />

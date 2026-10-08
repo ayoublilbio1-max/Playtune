@@ -268,6 +268,13 @@ export const de: Dictionary = {
     "„Zuletzt gehört“ und „Meistgehört“ beginnen wieder bei null. Deine Songs und Playlists bleiben unverändert.",
   "toast.historyCleared": "Hörverlauf gelöscht",
 
+  "home.recentEmpty":
+    "Songs, die du 15 Sekunden oder länger hörst, erscheinen hier.",
+  "most.plays": "{count}×",
+  "most.emptyTitle": "Noch nichts gehört",
+  "most.emptyText":
+    "Höre Songs 15 Sekunden oder länger – deine Favoriten erscheinen hier.",
+
   "toast.addedTo": "Zu {name} hinzugefügt",
   "toast.alreadyIn": "Schon in {name}",
   "toast.addedSongs_one": "{count} Song hinzugefügt",

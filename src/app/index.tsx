@@ -25,12 +25,13 @@ import {
 } from "../components/AddToPlaylistSheet";
 import { AppText } from "../components/AppText";
 import { CollectionList, type LibraryTab } from "../components/CollectionList";
-import { HistoryRows } from "../components/HistoryRows";
 import { IconButton } from "../components/IconButton";
 import { LibraryToolbar } from "../components/LibraryToolbar";
 import { MINI_PLAYER_SPACE, MiniPlayer } from "../components/MiniPlayer";
+import { PlayingBars } from "../components/PlayingBars";
 import { PlaylistsRow } from "../components/PlaylistsRow";
 import { PromptModal } from "../components/PromptModal";
+import { RecentList } from "../components/RecentList";
 import { SideMenu } from "../components/SideMenu";
 import { SongRow } from "../components/SongRow";
 import { SongListSkeleton } from "../components/SongRowSkeleton";
@@ -61,11 +62,17 @@ import {
 } from "../store/playlists";
 import { resumeLastSession } from "../store/resume";
 
-const TABS: { key: LibraryTab; label: TKey }[] = [
-  { key: "songs", label: "browse.songs" },
-  { key: "album", label: "browse.albums" },
-  { key: "artist", label: "browse.artists" },
-  { key: "folder", label: "browse.folders" },
+/** Home tabs. Each has an icon before its name; Recently played shows the moving bars instead. */
+const TABS: {
+  key: LibraryTab;
+  label: TKey;
+  icon?: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { key: "songs", label: "browse.songs", icon: "musical-notes" },
+  { key: "recent", label: "home.recent" },
+  { key: "album", label: "browse.albums", icon: "disc" },
+  { key: "artist", label: "browse.artists", icon: "person" },
+  { key: "folder", label: "browse.folders", icon: "folder" },
 ];
 
 let splashHidden = false;
@@ -86,6 +93,7 @@ export default function HomeScreen() {
   const error = useLibrary((s) => s.error);
   const currentId = usePlayer((s) => s.mediaId);
   const hasQueue = usePlayer((s) => s.queueLength > 0);
+  const isPlaying = usePlayer((s) => s.isPlaying);
 
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -273,7 +281,6 @@ export default function HomeScreen() {
         onOpen={openPlaylist}
         onPlay={playPlaylist}
       />
-      <HistoryRows />
       <View style={styles.songsHeader}>
         <AppText variant="heading">{t("browse.songs")}</AppText>
         <AppText variant="caption" muted>
@@ -344,7 +351,7 @@ export default function HomeScreen() {
             contentContainerStyle={styles.tabs}
           >
             {TABS.map((item) => {
-              const selected = item.key === tab;
+              const isTab = item.key === tab;
               return (
                 <Pressable
                   key={item.key}
@@ -355,18 +362,29 @@ export default function HomeScreen() {
                   style={({ pressed }) => [
                     styles.tab,
                     {
-                      backgroundColor: selected
-                        ? colors.accent
-                        : colors.surface,
-                      borderColor: selected ? colors.accent : colors.border,
+                      backgroundColor: isTab ? colors.accent : colors.surface,
+                      borderColor: isTab ? colors.accent : colors.border,
                       opacity: pressed ? 0.8 : 1,
                     },
                   ]}
                 >
+                  {item.key === "recent" ? (
+                    <PlayingBars
+                      playing={isPlaying}
+                      color={isTab ? colors.white : colors.accent}
+                      height={12}
+                    />
+                  ) : item.icon ? (
+                    <Ionicons
+                      name={item.icon}
+                      size={14}
+                      color={isTab ? colors.white : colors.accent}
+                    />
+                  ) : null}
                   <AppText
                     variant="caption"
-                    weight={selected ? "semibold" : "medium"}
-                    color={selected ? colors.white : undefined}
+                    weight={isTab ? "semibold" : "medium"}
+                    color={isTab ? colors.white : undefined}
                   >
                     {t(item.label)}
                   </AppText>
@@ -374,7 +392,13 @@ export default function HomeScreen() {
               );
             })}
           </ScrollView>
-          {tab !== "songs" ? (
+          {tab === "recent" ? (
+            <RecentList
+              query={q}
+              bottomSpace={hasQueue ? MINI_PLAYER_SPACE : 32}
+              onMore={openAddSheet}
+            />
+          ) : tab !== "songs" ? (
             <CollectionList
               kind={tab}
               query={q}
@@ -561,7 +585,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 17,
     borderWidth: 1,
-    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   selectTitle: {
     flexDirection: "row",

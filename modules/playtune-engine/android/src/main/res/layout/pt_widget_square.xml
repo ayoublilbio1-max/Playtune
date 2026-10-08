@@ -27,7 +27,8 @@
         android:scaleType="fitCenter"
         android:src="@drawable/pt_disc_logo" />
 
-      <View
+      <!-- Spacer. Widgets only allow a few view types: a plain <View> is not one of them. -->
+      <FrameLayout
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_weight="1" />
