@@ -245,6 +245,29 @@ export const de: Dictionary = {
   "lyrics.updateText":
     "Diese Version von Playtune kann noch keine Songtexte lesen. Installiere das neueste Update, um sie zu sehen.",
 
+  "common.done": "Fertig",
+  "reorder.title": "Neu ordnen",
+  "reorder.hint":
+    "Halte ≡ gedrückt und ziehe einen Song, um ihn zu verschieben.",
+  "home.recent": "Zuletzt gehört",
+  "home.most": "Meistgehört",
+  "select.count": "{count} ausgewählt",
+  "select.all": "Alle auswählen",
+  "select.none": "Keine auswählen",
+  "select.play": "Abspielen",
+  "toast.hiddenMany_one": "{count} Song ausgeblendet",
+  "toast.hiddenMany_other": "{count} Songs ausgeblendet",
+  "toast.addedSongsTo_one": "{count} Song zu {name} hinzugefügt",
+  "toast.addedSongsTo_other": "{count} Songs zu {name} hinzugefügt",
+  "feedback.open": "Mein Fiverr-Profil öffnen",
+  "toast.linkFailed": "Link konnte nicht geöffnet werden",
+  "settings.clearHistory": "Hörverlauf löschen",
+  "settings.clearHistoryHint": "Leert „Zuletzt gehört“ und „Meistgehört“",
+  "settings.clearHistoryTitle": "Hörverlauf löschen?",
+  "settings.clearHistoryText":
+    "„Zuletzt gehört“ und „Meistgehört“ beginnen wieder bei null. Deine Songs und Playlists bleiben unverändert.",
+  "toast.historyCleared": "Hörverlauf gelöscht",
+
   "toast.addedTo": "Zu {name} hinzugefügt",
   "toast.alreadyIn": "Schon in {name}",
   "toast.addedSongs_one": "{count} Song hinzugefügt",

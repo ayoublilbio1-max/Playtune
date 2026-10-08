@@ -5,10 +5,13 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText } from "../components/AppText";
+import { DraggableList } from "../components/DraggableList";
+import { IconButton } from "../components/IconButton";
 import { MINI_PLAYER_SPACE, MiniPlayer } from "../components/MiniPlayer";
 import { Overlay } from "../components/Overlay";
+import { ReorderSongRow } from "../components/ReorderSongRow";
 import { ScreenHeader } from "../components/ScreenHeader";
-import { SongRow } from "../components/SongRow";
+import { ROW_HEIGHT, SongRow } from "../components/SongRow";
 import { SongListSkeleton } from "../components/SongRowSkeleton";
 import { showToast, Toast } from "../components/Toast";
 import {
@@ -23,7 +26,7 @@ import { usePlayer } from "../store/player";
 
 /**
  * The play queue: every song in order, the current one highlighted.
- * Tap = play it. ⋮ = move up / down, remove.
+ * Tap = play it. ⋮ = move up / down, remove. "Reorder" (⇅) = drag songs by their handle.
  */
 export default function QueueScreen() {
   const colors = useTheme();
@@ -38,6 +41,7 @@ export default function QueueScreen() {
 
   const [ids, setIds] = useState<string[] | null>(null);
   const [menuIndex, setMenuIndex] = useState<number | null>(null);
+  const [reordering, setReordering] = useState(false);
 
   // Hidden songs can still be in the queue, so they are looked up in every song (allById).
 
@@ -77,6 +81,32 @@ export default function QueueScreen() {
         .filter((s): s is EngineSong => !!s),
     [ids, songById],
   );
+  // Reorder mode works on the engine's own list (same indexes), with keys that stay the same while moving.
+  const entries = useMemo(() => {
+    const seen = new Map<string, number>();
+    return (ids ?? []).map((id) => {
+      const n = (seen.get(id) ?? 0) + 1;
+      seen.set(id, n);
+      return { key: `${id}~${n}`, id, song: songById.get(id) };
+    });
+  }, [ids, songById]);
+
+  const onDragMove = useCallback(
+    async (from: number, to: number) => {
+      if (__DEV__) console.log(`[queue] drag ${from} → ${to}`);
+      setIds((prev) => {
+        if (!prev) return prev;
+        const next = [...prev];
+        const [moved] = next.splice(from, 1);
+        next.splice(to, 0, moved);
+        return next;
+      });
+      await PlaytuneEngine.moveInQueue(from, to).catch(() => {});
+      refresh("dragged");
+    },
+    [refresh],
+  );
+
   const upNext = songs.slice(Math.max(0, currentIndex + 1));
   const upNextMs = upNext.reduce((sum, s) => sum + s.durationMs, 0);
 
@@ -123,7 +153,31 @@ export default function QueueScreen() {
         { backgroundColor: colors.background, paddingTop: insets.top },
       ]}
     >
-      <ScreenHeader title={t("menu.queue")} />
+      <ScreenHeader
+        title={t("menu.queue")}
+        right={
+          songs.length > 1 ? (
+            reordering ? (
+              <Pressable
+                hitSlop={8}
+                onPress={() => setReordering(false)}
+                style={styles.done}
+              >
+                <AppText weight="semibold" color={colors.accent}>
+                  {t("common.done")}
+                </AppText>
+              </Pressable>
+            ) : (
+              <IconButton
+                name="swap-vertical"
+                size={22}
+                accessibilityLabel={t("reorder.title")}
+                onPress={() => setReordering(true)}
+              />
+            )
+          ) : null
+        }
+      />
 
       {loading ? (
         <SongListSkeleton rows={7} />
@@ -137,6 +191,28 @@ export default function QueueScreen() {
             {t("queue.emptyText")}
           </AppText>
         </View>
+      ) : reordering ? (
+        <DraggableList
+          data={entries}
+          keyOf={(e) => e.key}
+          rowHeight={ROW_HEIGHT}
+          onMove={onDragMove}
+          header={
+            <AppText variant="caption" muted style={styles.summary}>
+              {t("reorder.hint")}
+            </AppText>
+          }
+          footerSpace={queueLength > 0 ? MINI_PLAYER_SPACE : 32}
+          renderItem={(e, index) =>
+            e.song ? (
+              <ReorderSongRow song={e.song} active={index === currentIndex} />
+            ) : (
+              <AppText muted style={styles.summary}>
+                {t("common.unknownSong")}
+              </AppText>
+            )
+          }
+        />
       ) : (
         <FlashList
           data={songs}
@@ -257,6 +333,10 @@ const styles = StyleSheet.create({
   summary: {
     paddingHorizontal: 20,
     paddingBottom: 8,
+  },
+  done: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   played: {
     opacity: 0.5,

@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import {
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -18,11 +19,12 @@ import { ConfirmModal } from "../components/ConfirmModal";
 import { Overlay } from "../components/Overlay";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { showToast, Toast } from "../components/Toast";
-import { APP_VERSION, DEVELOPER } from "../constants/app";
+import { APP_VERSION, DEVELOPER, FIVERR_URL } from "../constants/app";
 import { applyPauseOnDetach, canChangePauseOnDetach } from "../engine/engine";
 import { clearArtworkCache } from "../hooks/use-artwork";
 import { useTheme } from "../hooks/use-theme";
 import { t as tNow, useT } from "../i18n";
+import { clearHistory } from "../store/history";
 import { LANGUAGES, setLanguage } from "../store/language";
 import { rescanLibrary, useLibrary } from "../store/library";
 import {
@@ -134,6 +136,7 @@ export default function SettingsScreen() {
   const [confirmClear, setConfirmClear] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [confirmHistory, setConfirmHistory] = useState(false);
 
   const canScan = libraryStatus === "ready" || libraryStatus === "error";
   const detachLive = canChangePauseOnDetach();
@@ -351,6 +354,14 @@ export default function SettingsScreen() {
             subtitle={t("settings.clearCacheHint")}
             onPress={() => setConfirmClear(true)}
           />
+          <Divider />
+          <Row
+            icon="time-outline"
+            iconColor={colors.pink}
+            title={t("settings.clearHistory")}
+            subtitle={t("settings.clearHistoryHint")}
+            onPress={() => setConfirmHistory(true)}
+          />
         </Section>
 
         <Section title={t("settings.help")}>
@@ -485,18 +496,52 @@ export default function SettingsScreen() {
             </AppText>
           </View>
           <Pressable
-            onPress={() => setFeedbackOpen(false)}
+            onPress={() => {
+              setFeedbackOpen(false);
+              if (__DEV__) console.log("[feedback] open Fiverr");
+              Linking.openURL(FIVERR_URL).catch(() =>
+                showToast(tNow("toast.linkFailed")),
+              );
+            }}
             style={({ pressed }) => [
               styles.feedbackButton,
               { backgroundColor: colors.accent, opacity: pressed ? 0.8 : 1 },
             ]}
           >
+            <Ionicons name="open-outline" size={18} color={colors.white} />
             <AppText weight="semibold" color={colors.white}>
-              {t("common.ok")}
+              {t("feedback.open")}
             </AppText>
+          </Pressable>
+          <Pressable
+            onPress={() => setFeedbackOpen(false)}
+            style={({ pressed }) => [
+              styles.feedbackClose,
+              {
+                backgroundColor: colors.surfaceRaised,
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+          >
+            <AppText weight="semibold">{t("common.close")}</AppText>
           </Pressable>
         </View>
       </Overlay>
+
+      <ConfirmModal
+        visible={confirmHistory}
+        icon="time-outline"
+        title={t("settings.clearHistoryTitle")}
+        message={t("settings.clearHistoryText")}
+        confirmLabel={t("settings.clear")}
+        destructive={false}
+        onCancel={() => setConfirmHistory(false)}
+        onConfirm={() => {
+          setConfirmHistory(false);
+          clearHistory();
+          showToast(tNow("toast.historyCleared"));
+        }}
+      />
 
       <ConfirmModal
         visible={confirmClear}
@@ -623,7 +668,16 @@ const styles = StyleSheet.create({
     gap: 2,
     marginTop: 6,
   },
+  feedbackClose: {
+    alignSelf: "stretch",
+    height: 48,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   feedbackButton: {
+    flexDirection: "row",
+    gap: 8,
     marginTop: 12,
     alignSelf: "stretch",
     height: 48,

@@ -10,10 +10,13 @@ import {
 
 import { useTheme } from "../hooks/use-theme";
 import { AppText } from "./AppText";
+import { EqIcon } from "./EqIcon";
 
 type IconSpec =
   | { family?: "ion"; name: keyof typeof Ionicons.glyphMap }
-  | { family: "mci"; name: keyof typeof MaterialCommunityIcons.glyphMap };
+  | { family: "mci"; name: keyof typeof MaterialCommunityIcons.glyphMap }
+  /** Playtune's own equalizer icon (assets/icons/eq_icon.webp). */
+  | { family: "eq"; name?: undefined };
 
 type Props = IconSpec & {
   onPress: () => void;
@@ -80,7 +83,12 @@ export function IconButton(props: Props) {
     >
       {({ pressed }) => (
         <>
-          {props.family === "mci" ? (
+          {props.family === "eq" ? (
+            <EqIcon
+              size={size}
+              color={pressed && pressedColor ? pressedColor : iconColor}
+            />
+          ) : props.family === "mci" ? (
             <MaterialCommunityIcons
               name={props.name}
               size={size}

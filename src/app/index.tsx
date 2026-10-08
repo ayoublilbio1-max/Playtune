@@ -10,12 +10,22 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  BackHandler,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AddToPlaylistSheet } from "../components/AddToPlaylistSheet";
+import {
+  AddToPlaylistSheet,
+  queueSongs,
+} from "../components/AddToPlaylistSheet";
 import { AppText } from "../components/AppText";
 import { CollectionList, type LibraryTab } from "../components/CollectionList";
+import { HistoryRows } from "../components/HistoryRows";
 import { IconButton } from "../components/IconButton";
 import { LibraryToolbar } from "../components/LibraryToolbar";
 import { MINI_PLAYER_SPACE, MiniPlayer } from "../components/MiniPlayer";
@@ -36,7 +46,12 @@ import {
 import { playSongs, type EngineSong } from "../engine/engine";
 import { useTheme } from "../hooks/use-theme";
 import { useT, type TKey } from "../i18n";
-import { allowAndScan, initLibrary, useLibrary } from "../store/library";
+import {
+  allowAndScan,
+  hideSongs,
+  initLibrary,
+  useLibrary,
+} from "../store/library";
 import { usePlayer } from "../store/player";
 import {
   addSongsToPlaylist,
@@ -58,7 +73,7 @@ let splashHidden = false;
 type Prompt =
   | null
   | { mode: "create" }
-  | { mode: "create-and-add"; song: EngineSong };
+  | { mode: "create-and-add"; songs: EngineSong[] };
 
 export default function HomeScreen() {
   const colors = useTheme();
@@ -77,6 +92,9 @@ export default function HomeScreen() {
   const [sort, setSort] = useState<SortKey>(loadSort);
   const [sortOpen, setSortOpen] = useState(false);
   const [addSong, setAddSong] = useState<EngineSong | null>(null);
+  /** Selection mode (long-press a song): ids of the selected songs; null = not selecting. */
+  const [selected, setSelected] = useState<Set<string> | null>(null);
+  const [addMany, setAddMany] = useState<EngineSong[] | null>(null);
   const [prompt, setPrompt] = useState<Prompt>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [tab, setTab] = useState<LibraryTab>("songs");
@@ -125,12 +143,76 @@ export default function HomeScreen() {
     return result;
   }, [q, sorted, searchIndex]);
 
+  const selecting = selected !== null;
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev ?? []);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   const onPressSong = useCallback(
     (index: number) => {
+      const song = visible[index];
+      if (selecting) {
+        if (song) toggleSelect(song.id);
+        return;
+      }
       playSongs(visible, index, q ? "search" : `library (${sort})`);
     },
-    [visible, q, sort],
+    [visible, q, sort, selecting, toggleSelect],
   );
+
+  const onLongPressSong = useCallback(
+    (song: EngineSong) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      if (selecting) {
+        toggleSelect(song.id);
+        return;
+      }
+      if (__DEV__) console.log("[select] selection mode on");
+      setSelected(new Set([song.id]));
+    },
+    [selecting, toggleSelect],
+  );
+
+  // Back leaves selection mode.
+  useEffect(() => {
+    if (!selecting) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      setSelected(null);
+      return true;
+    });
+    return () => sub.remove();
+  }, [selecting]);
+
+  // Selected songs in list order (the order they are played / added in).
+  const selectedSongs = useMemo(
+    () => (selected ? sorted.filter((s) => selected.has(s.id)) : []),
+    [selected, sorted],
+  );
+  const allSelected =
+    selecting && visible.length > 0 && visible.every((s) => selected.has(s.id));
+
+  const selectionAction = (action: "play" | "queue" | "playlist" | "hide") => {
+    const list = selectedSongs;
+    if (list.length === 0) return;
+    if (__DEV__) console.log(`[select] ${action} — ${list.length} songs`);
+    if (action === "play") playSongs(list, 0, "selection");
+    if (action === "queue") queueSongs(list, false);
+    if (action === "playlist") {
+      setAddMany(list);
+      return;
+    }
+    if (action === "hide") {
+      hideSongs(list.map((s) => s.id));
+      showToast(tn("toast.hiddenMany", list.length));
+    }
+    setSelected(null);
+  };
 
   const openAddSheet = useCallback((song: EngineSong) => {
     Haptics.selectionAsync().catch(() => {});
@@ -165,8 +247,16 @@ export default function HomeScreen() {
     if (!current) return;
     const id = await createPlaylist(name);
     if (current.mode === "create-and-add") {
-      await addSongsToPlaylist(id, [current.song.id]);
-      showToast(t("toast.addedTo", { name }));
+      const added = await addSongsToPlaylist(
+        id,
+        current.songs.map((s) => s.id),
+      );
+      showToast(
+        current.songs.length > 1
+          ? tn("toast.addedSongsTo", added, { name })
+          : t("toast.addedTo", { name }),
+      );
+      setSelected(null);
     } else {
       openPlaylist(id);
     }
@@ -183,6 +273,7 @@ export default function HomeScreen() {
         onOpen={openPlaylist}
         onPlay={playPlaylist}
       />
+      <HistoryRows />
       <View style={styles.songsHeader}>
         <AppText variant="heading">{t("browse.songs")}</AppText>
         <AppText variant="caption" muted>
@@ -199,15 +290,44 @@ export default function HomeScreen() {
         { backgroundColor: colors.background, paddingTop: insets.top },
       ]}
     >
-      <View style={styles.header}>
-        <AppText variant="title">Playtune</AppText>
-        <IconButton
-          name="menu"
-          size={28}
-          accessibilityLabel="Menu"
-          onPress={() => setMenuOpen(true)}
-        />
-      </View>
+      {selecting ? (
+        <View style={styles.header}>
+          <View style={styles.selectTitle}>
+            <IconButton
+              name="close"
+              size={26}
+              accessibilityLabel={t("common.close")}
+              onPress={() => setSelected(null)}
+            />
+            <AppText variant="heading">
+              {t("select.count", { count: selected.size })}
+            </AppText>
+          </View>
+          <Pressable
+            hitSlop={8}
+            onPress={() =>
+              setSelected(
+                allSelected ? new Set() : new Set(visible.map((s) => s.id)),
+              )
+            }
+            style={styles.selectAll}
+          >
+            <AppText weight="semibold" color={colors.accent}>
+              {allSelected ? t("select.none") : t("select.all")}
+            </AppText>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.header}>
+          <AppText variant="title">Playtune</AppText>
+          <IconButton
+            name="menu"
+            size={28}
+            accessibilityLabel="Menu"
+            onPress={() => setMenuOpen(true)}
+          />
+        </View>
+      )}
 
       {status === "ready" ? (
         <>
@@ -264,15 +384,16 @@ export default function HomeScreen() {
             <FlashList
               data={visible}
               keyExtractor={(s) => s.id}
-              extraData={currentId}
+              extraData={`${currentId}|${selected ? selected.size : -1}|${selected ? [...selected].join(",") : ""}`}
               renderItem={({ item, index }) => (
                 <SongRow
                   song={item}
                   index={index}
                   active={item.id === currentId}
                   onPress={onPressSong}
-                  onLongPress={openAddSheet}
-                  trailing="more"
+                  onLongPress={onLongPressSong}
+                  trailing={selecting ? "check" : "more"}
+                  checked={selecting && selected.has(item.id)}
                   onTrailingPress={openAddSheet}
                 />
               )}
@@ -283,7 +404,11 @@ export default function HomeScreen() {
                 </AppText>
               }
               contentContainerStyle={{
-                paddingBottom: hasQueue ? MINI_PLAYER_SPACE : 32,
+                paddingBottom: hasQueue
+                  ? MINI_PLAYER_SPACE
+                  : selecting
+                    ? 120
+                    : 32,
               }}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
@@ -326,7 +451,48 @@ export default function HomeScreen() {
         </View>
       ) : null}
 
-      <MiniPlayer />
+      {selecting ? (
+        <View
+          style={[
+            styles.selectBar,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              bottom: insets.bottom + 10,
+            },
+          ]}
+        >
+          {(
+            [
+              ["play", "play", "select.play"],
+              ["queue", "list", "sheet.addToQueue"],
+              ["playlist", "add-circle-outline", "sheet.addToPlaylist"],
+              ["hide", "eye-off-outline", "sheet.hide"],
+            ] as const
+          ).map(([action, icon, label]) => (
+            <Pressable
+              key={action}
+              disabled={selected.size === 0}
+              onPress={() => selectionAction(action)}
+              style={({ pressed }) => [
+                styles.selectAction,
+                { opacity: selected.size === 0 ? 0.4 : pressed ? 0.7 : 1 },
+              ]}
+            >
+              <Ionicons
+                name={icon}
+                size={22}
+                color={action === "play" ? colors.accent : colors.textPrimary}
+              />
+              <AppText variant="label" align="center" numberOfLines={1}>
+                {t(label)}
+              </AppText>
+            </Pressable>
+          ))}
+        </View>
+      ) : (
+        <MiniPlayer />
+      )}
 
       <SortSheet
         visible={sortOpen}
@@ -339,7 +505,20 @@ export default function HomeScreen() {
         onClose={() => setAddSong(null)}
         onNewPlaylist={(song) => {
           setAddSong(null);
-          setPrompt({ mode: "create-and-add", song });
+          setPrompt({ mode: "create-and-add", songs: [song] });
+        }}
+      />
+      <AddToPlaylistSheet
+        song={null}
+        songs={addMany}
+        onClose={() => {
+          setAddMany(null);
+          setSelected(null);
+        }}
+        onNewPlaylist={() => {}}
+        onNewPlaylistMany={(list) => {
+          setAddMany(null);
+          setPrompt({ mode: "create-and-add", songs: list });
         }}
       />
       <PromptModal
@@ -383,6 +562,32 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     borderWidth: 1,
     justifyContent: "center",
+  },
+  selectTitle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginLeft: -12,
+  },
+  selectAll: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  selectBar: {
+    position: "absolute",
+    left: 10,
+    right: 10,
+    borderRadius: 22,
+    borderWidth: 1,
+    flexDirection: "row",
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    elevation: 12,
+  },
+  selectAction: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
   },
   sectionLabel: {
     paddingHorizontal: 20,

@@ -57,8 +57,7 @@ export function LibraryToolbar({
         onPress={onSortPress}
       />
       <IconButton
-        family="mci"
-        name="equalizer"
+        family="eq"
         size={22}
         box="soft"
         accessibilityLabel="Equalizer"

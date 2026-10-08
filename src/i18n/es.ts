@@ -243,6 +243,29 @@ export const es: Dictionary = {
   "lyrics.updateText":
     "Esta versión de Playtune aún no lee letras. Instala la última actualización para verlas.",
 
+  "common.done": "Listo",
+  "reorder.title": "Reordenar",
+  "reorder.hint": "Mantén ≡ y arrastra una canción para moverla.",
+  "home.recent": "Escuchadas recientemente",
+  "home.most": "Las más escuchadas",
+  "select.count": "{count} seleccionadas",
+  "select.all": "Seleccionar todo",
+  "select.none": "Quitar selección",
+  "select.play": "Reproducir",
+  "toast.hiddenMany_one": "{count} canción oculta",
+  "toast.hiddenMany_other": "{count} canciones ocultas",
+  "toast.addedSongsTo_one": "{count} canción añadida a {name}",
+  "toast.addedSongsTo_other": "{count} canciones añadidas a {name}",
+  "feedback.open": "Abrir mi perfil de Fiverr",
+  "toast.linkFailed": "No se pudo abrir el enlace",
+  "settings.clearHistory": "Borrar historial de escucha",
+  "settings.clearHistoryHint":
+    "Vacía «Escuchadas recientemente» y «Las más escuchadas»",
+  "settings.clearHistoryTitle": "¿Borrar el historial de escucha?",
+  "settings.clearHistoryText":
+    "«Escuchadas recientemente» y «Las más escuchadas» empiezan de cero. Tus canciones y listas no cambian.",
+  "toast.historyCleared": "Historial de escucha borrado",
+
   "toast.addedTo": "Añadida a {name}",
   "toast.alreadyIn": "Ya está en {name}",
   "toast.addedSongs_one": "{count} canción añadida",

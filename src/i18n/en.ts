@@ -255,6 +255,28 @@ export const en = {
   "lyrics.updateText":
     "This version of Playtune can’t read lyrics yet. Install the latest update to see them.",
 
+  "common.done": "Done",
+  "reorder.title": "Reorder",
+  "reorder.hint": "Hold ≡ and drag a song to move it.",
+  "home.recent": "Recently played",
+  "home.most": "Most played",
+  "select.count": "{count} selected",
+  "select.all": "Select all",
+  "select.none": "Select none",
+  "select.play": "Play",
+  "toast.hiddenMany_one": "Hid {count} song",
+  "toast.hiddenMany_other": "Hid {count} songs",
+  "toast.addedSongsTo_one": "Added {count} song to {name}",
+  "toast.addedSongsTo_other": "Added {count} songs to {name}",
+  "feedback.open": "Open my Fiverr profile",
+  "toast.linkFailed": "Could not open the link",
+  "settings.clearHistory": "Clear listening history",
+  "settings.clearHistoryHint": "Empties Recently played and Most played",
+  "settings.clearHistoryTitle": "Clear listening history?",
+  "settings.clearHistoryText":
+    "Recently played and Most played start again from zero. Your songs and playlists are not touched.",
+  "toast.historyCleared": "Listening history cleared",
+
   // Toasts
   "toast.addedTo": "Added to {name}",
   "toast.alreadyIn": "Already in {name}",

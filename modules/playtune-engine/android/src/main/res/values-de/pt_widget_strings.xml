@@ -10,4 +10,5 @@
   <string name="pt_widget_pause">Pause</string>
   <string name="pt_widget_next">Weiter</string>
   <string name="pt_widget_previous">Zurück</string>
+  <string name="pt_widget_square_description">Kleiner Player: Disc, Song und Abspielen / Pause</string>
 </resources>

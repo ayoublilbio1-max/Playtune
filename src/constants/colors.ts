@@ -36,9 +36,11 @@ export type AppColors = {
   innerGradient: readonly [string, string, string, string];
   /** Song / playlist without artwork (same colours as the notification placeholder). */
   placeholderGradient: readonly [string, string, string];
-  /** Equalizer band lines (top → bottom). */
-  eqBandGradient: readonly [string, string, string];
-  /** Equalizer strength sliders (left → right). */
+  /** Equalizer band sliders (top → bottom: blue at the top, magenta at the bottom). */
+  eqBandGradient: readonly [string, string, string, string];
+  /** Equalizer curve and selected preset (left → right). */
+  eqCurveGradient: readonly [string, string, string];
+  /** Bass boost / virtualizer sliders (left → right). */
   eqStrengthGradient: readonly [string, string];
 };
 
@@ -55,8 +57,9 @@ const brand = {
   outerGradient: ["#F70AAE", "#E401E3", "#7C09F1", "#4AC4F4"] as const,
   innerGradient: ["#7C09F1", "#5C08F5", "#3D08F8", "#1C9EEF"] as const,
   placeholderGradient: ["#E401E3", "#7C09F1", "#19012B"] as const,
-  eqBandGradient: ["#4AC4F4", "#1C9EEF", "#3D08F8"] as const,
-  eqStrengthGradient: ["#5C08F5", "#7C09F1"] as const,
+  eqBandGradient: ["#1C9EEF", "#3D08F8", "#7C09F1", "#E401E3"] as const,
+  eqCurveGradient: ["#E401E3", "#7C09F1", "#3D08F8"] as const,
+  eqStrengthGradient: ["#E401E3", "#7C09F1"] as const,
 };
 
 export const darkColors: AppColors = {

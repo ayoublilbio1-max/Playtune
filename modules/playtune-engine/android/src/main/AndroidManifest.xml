@@ -37,6 +37,19 @@
         android:name="android.appwidget.provider"
         android:resource="@xml/pt_widget_info" />
     </receiver>
+
+    <!-- Square home-screen widget (2×2): cover / disc logo, title, play-pause, next -->
+    <receiver
+      android:name="expo.modules.playtuneengine.PlaytuneWidgetSquare"
+      android:exported="false"
+      android:label="@string/pt_widget_label">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/pt_widget_square_info" />
+    </receiver>
   </application>
 
 </manifest>

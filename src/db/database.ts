@@ -5,8 +5,9 @@ import { openDatabaseSync, type SQLiteDatabase } from "expo-sqlite";
  * The schema version lives in PRAGMA user_version, so each version only adds what is missing.
  *   v1: playlists + playlist_songs
  *   v2: playlists.kind ('user' | 'liked') + the "Liked songs" playlist
+ *   v3: plays (how many times each song was played, and when last) for Recently / Most played
  */
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export const LIKED_PLAYLIST_NAME = "Liked songs";
 
@@ -45,6 +46,17 @@ export function getDb(): SQLiteDatabase {
     opened.execSync(
       `ALTER TABLE playlists ADD COLUMN kind TEXT NOT NULL DEFAULT 'user';`,
     );
+  }
+  if (version < 3) {
+    opened.execSync(`
+      CREATE TABLE IF NOT EXISTS plays (
+        song_id TEXT PRIMARY KEY NOT NULL,
+        play_count INTEGER NOT NULL DEFAULT 0,
+        last_played INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_plays_last ON plays (last_played DESC);
+      CREATE INDEX IF NOT EXISTS idx_plays_count ON plays (play_count DESC);
+    `);
   }
   if (version !== DB_VERSION)
     opened.execSync(`PRAGMA user_version = ${DB_VERSION}`);

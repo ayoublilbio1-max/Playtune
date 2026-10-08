@@ -7,7 +7,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { PlaytuneEngine, toQueueItem, type EngineSong } from "../engine/engine";
 import { usePlaylistCover } from "../hooks/use-artwork";
 import { useTheme } from "../hooks/use-theme";
-import { t as tNow, useT } from "../i18n";
+import { t as tNow, tn as tnNow, useT } from "../i18n";
 import { hideSongs } from "../store/library";
 import { getPlayer } from "../store/player";
 import {
@@ -28,6 +28,9 @@ type Props = {
   onNewPlaylist: (song: EngineSong) => void;
   /** Play next / Add to queue / Hide row at the top (off on the Player screen). */
   showActions?: boolean;
+  /** Several selected songs (Home selection mode): only "add to playlist" is shown. */
+  songs?: EngineSong[] | null;
+  onNewPlaylistMany?: (songs: EngineSong[]) => void;
 };
 
 /** Adds songs to the queue: right after the current song, or at the end. Starts playing if nothing is queued. */
@@ -93,24 +96,34 @@ export function AddToPlaylistSheet({
   onClose,
   onNewPlaylist,
   showActions = true,
+  songs,
+  onNewPlaylistMany,
 }: Props) {
   const colors = useTheme();
-  const { t } = useT();
+  const { t, tn } = useT();
   const playlists = usePlaylists((s) => s.playlists);
+  const many = songs && songs.length > 0 ? songs : null;
+  const withActions = showActions && !many;
 
   const add = async (playlist: Playlist) => {
-    if (!song) return;
+    const list = many ?? (song ? [song] : []);
+    if (list.length === 0) return;
     onClose();
-    const added = await addSongsToPlaylist(playlist.id, [song.id]);
+    const added = await addSongsToPlaylist(
+      playlist.id,
+      list.map((s) => s.id),
+    );
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
       () => {},
     );
     const name = playlistName(playlist);
-    showToast(
-      added > 0
-        ? tNow("toast.addedTo", { name })
-        : tNow("toast.alreadyIn", { name }),
-    );
+    if (many) showToast(tnNow("toast.addedSongsTo", added, { name }));
+    else
+      showToast(
+        added > 0
+          ? tNow("toast.addedTo", { name })
+          : tNow("toast.alreadyIn", { name }),
+      );
   };
 
   const queue = (playNext: boolean) => {
@@ -127,9 +140,9 @@ export function AddToPlaylistSheet({
   };
 
   return (
-    <Overlay visible={song !== null} onClose={onClose}>
+    <Overlay visible={song !== null || many !== null} onClose={onClose}>
       <AppText variant="heading" numberOfLines={1}>
-        {showActions ? song?.title : t("sheet.addToPlaylist")}
+        {withActions ? song?.title : t("sheet.addToPlaylist")}
       </AppText>
       <AppText
         variant="caption"
@@ -137,14 +150,16 @@ export function AddToPlaylistSheet({
         numberOfLines={1}
         style={styles.subtitle}
       >
-        {showActions
-          ? song?.artist?.trim()
-            ? song.artist
-            : t("common.unknownArtist")
-          : song?.title}
+        {many
+          ? tn("songs", many.length)
+          : withActions
+            ? song?.artist?.trim()
+              ? song.artist
+              : t("common.unknownArtist")
+            : song?.title}
       </AppText>
 
-      {showActions ? (
+      {withActions ? (
         <>
           <View style={styles.actions}>
             <Action
@@ -189,7 +204,8 @@ export function AddToPlaylistSheet({
 
       <Pressable
         onPress={() => {
-          if (song) onNewPlaylist(song);
+          if (many) onNewPlaylistMany?.(many);
+          else if (song) onNewPlaylist(song);
         }}
         style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
       >
@@ -212,7 +228,7 @@ export function AddToPlaylistSheet({
           <PlaylistOption
             key={p.id}
             playlist={p}
-            contains={song ? p.songIds.includes(song.id) : false}
+            contains={!many && song ? p.songIds.includes(song.id) : false}
             onPress={add}
           />
         ))}

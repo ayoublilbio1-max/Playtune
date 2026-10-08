@@ -9,12 +9,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "../../components/AppText";
 import { ArtworkPlaceholder } from "../../components/ArtworkPlaceholder";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { DraggableList } from "../../components/DraggableList";
 import { IconButton } from "../../components/IconButton";
 import { MINI_PLAYER_SPACE, MiniPlayer } from "../../components/MiniPlayer";
 import { Overlay } from "../../components/Overlay";
 import { PromptModal } from "../../components/PromptModal";
+import { ReorderSongRow } from "../../components/ReorderSongRow";
 import { ScreenHeader } from "../../components/ScreenHeader";
-import { SongRow } from "../../components/SongRow";
+import { ROW_HEIGHT, SongRow } from "../../components/SongRow";
 import { SongListSkeleton } from "../../components/SongRowSkeleton";
 import { showToast, Toast } from "../../components/Toast";
 import {
@@ -33,6 +35,7 @@ import {
   playlistName,
   removeSongFromPlaylist,
   renamePlaylist,
+  reorderPlaylist,
   usePlaylists,
 } from "../../store/playlists";
 
@@ -53,6 +56,7 @@ export default function PlaylistScreen() {
   const hasQueue = usePlayer((s) => s.queueLength > 0);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [reordering, setReordering] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [removeSong, setRemoveSong] = useState<EngineSong | null>(null);
@@ -185,15 +189,38 @@ export default function PlaylistScreen() {
       ]}
     >
       <ScreenHeader
+        title={reordering ? t("reorder.title") : undefined}
         right={
-          playlist && playlist.kind !== "liked" ? (
-            <IconButton
-              name="ellipsis-vertical"
-              size={20}
-              accessibilityLabel="Playlist options"
-              onPress={() => setMenuOpen(true)}
-            />
-          ) : null
+          reordering ? (
+            <Pressable
+              hitSlop={8}
+              onPress={() => setReordering(false)}
+              style={styles.done}
+            >
+              <AppText weight="semibold" color={colors.accent}>
+                {t("common.done")}
+              </AppText>
+            </Pressable>
+          ) : (
+            <View style={styles.headerRight}>
+              {songs.length > 1 ? (
+                <IconButton
+                  name="swap-vertical"
+                  size={22}
+                  accessibilityLabel={t("reorder.title")}
+                  onPress={() => setReordering(true)}
+                />
+              ) : null}
+              {playlist && playlist.kind !== "liked" ? (
+                <IconButton
+                  name="ellipsis-vertical"
+                  size={20}
+                  accessibilityLabel="Playlist options"
+                  onPress={() => setMenuOpen(true)}
+                />
+              ) : null}
+            </View>
+          )
         }
       />
 
@@ -201,6 +228,28 @@ export default function PlaylistScreen() {
       libraryStatus === "checking" ||
       libraryStatus === "scanning" ? (
         <SongListSkeleton />
+      ) : reordering ? (
+        <DraggableList
+          data={songs}
+          keyOf={(s) => s.id}
+          rowHeight={ROW_HEIGHT}
+          onMove={(from, to) => {
+            const next = songs.map((s) => s.id);
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved);
+            if (__DEV__) console.log(`[playlist] #${id}: drag ${from} → ${to}`);
+            reorderPlaylist(id, next);
+          }}
+          header={
+            <AppText variant="caption" muted style={styles.hint}>
+              {t("reorder.hint")}
+            </AppText>
+          }
+          footerSpace={hasQueue ? MINI_PLAYER_SPACE : 32}
+          renderItem={(s) => (
+            <ReorderSongRow song={s} active={s.id === currentId} />
+          )}
+        />
       ) : (
         <FlashList
           data={songs}
@@ -355,6 +404,18 @@ const styles = StyleSheet.create({
   empty: {
     marginTop: 24,
     paddingHorizontal: 32,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  done: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  hint: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   menuTitle: {
     marginBottom: 8,

@@ -1,4 +1,4 @@
-import { NavigationBar, setVisibilityAsync } from "expo-navigation-bar";
+import { setVisibilityAsync } from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -7,6 +7,7 @@ import { AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { useTheme } from "../hooks/use-theme";
+import { initHistory } from "../store/history";
 import { initPlayer } from "../store/player";
 import { useThemeMode } from "../store/theme";
 
@@ -22,7 +23,9 @@ export const unstable_settings = {
 
 /**
  * Hides the phone's ◁ ○ □ bar again (some phones show it after the app comes back from the background).
- * The <NavigationBar hidden /> below hides it while the app runs; a swipe from the bottom edge shows it for a moment.
+ * app.json (expo-navigation-bar plugin, hidden: true) hides it when the app starts; a swipe from the bottom edge shows it for a moment.
+ * No <NavigationBar /> component here: after leaving the app with Back and reopening it, that component tried to
+ * restyle the old, closed screen and threw "The current activity is no longer available".
  */
 function hideNavigationBar(reason: string) {
   setVisibilityAsync("hidden")
@@ -41,6 +44,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     initPlayer();
+    initHistory();
+    hideNavigationBar("start");
 
     // Some phones show the bar again after the app comes back from the background.
     const sub = AppState.addEventListener("change", (state) => {
@@ -63,7 +68,6 @@ export default function RootLayout() {
       style={{ flex: 1, backgroundColor: colors.background }}
     >
       <StatusBar style={mode === "light" ? "dark" : "light"} />
-      <NavigationBar hidden />
       <Stack
         screenOptions={{
           headerShown: false,

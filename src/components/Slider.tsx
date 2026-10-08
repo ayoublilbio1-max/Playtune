@@ -34,6 +34,9 @@ type Props = {
   activeGradient?: readonly string[];
   inactiveColor: string;
   thumbColor?: string;
+  /** Ring around the thumb (e.g. the equalizer's lavender ring). */
+  thumbBorderColor?: string;
+  thumbBorderWidth?: number;
   /** Animate value changes coming from the app (e.g. playback progress) over this many ms. */
   smoothMs?: number;
   /** Minimum change (0..1) before onValueChange is called again while dragging. */
@@ -62,6 +65,8 @@ export function Slider(props: Props) {
     activeGradient,
     inactiveColor,
     thumbColor,
+    thumbBorderColor,
+    thumbBorderWidth = 0,
     smoothMs = 0,
     step = 0.004,
     style,
@@ -264,6 +269,8 @@ export function Slider(props: Props) {
               height: thumbSize,
               borderRadius: thumbSize / 2,
               backgroundColor: thumbColor ?? activeColor,
+              borderWidth: thumbBorderColor ? thumbBorderWidth || 2 : 0,
+              borderColor: thumbBorderColor,
             },
             vertical
               ? { left: thumbOffset, bottom: 0 }

@@ -21,6 +21,7 @@ const store = createStore<PlayerState>({
 
 export const usePlayer = store.useStore;
 export const getPlayer = store.get;
+export const subscribePlayer = store.subscribe;
 
 let started = false;
 

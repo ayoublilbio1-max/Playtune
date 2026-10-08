@@ -245,6 +245,29 @@ export const fr: Dictionary = {
   "lyrics.updateText":
     "Cette version de Playtune ne lit pas encore les paroles. Installez la dernière mise à jour pour les voir.",
 
+  "common.done": "OK",
+  "reorder.title": "Réorganiser",
+  "reorder.hint": "Maintenez ≡ et faites glisser un titre pour le déplacer.",
+  "home.recent": "Écoutés récemment",
+  "home.most": "Les plus écoutés",
+  "select.count": "{count} sélectionné(s)",
+  "select.all": "Tout sélectionner",
+  "select.none": "Tout désélectionner",
+  "select.play": "Lire",
+  "toast.hiddenMany_one": "{count} titre masqué",
+  "toast.hiddenMany_other": "{count} titres masqués",
+  "toast.addedSongsTo_one": "{count} titre ajouté à {name}",
+  "toast.addedSongsTo_other": "{count} titres ajoutés à {name}",
+  "feedback.open": "Ouvrir mon profil Fiverr",
+  "toast.linkFailed": "Impossible d’ouvrir le lien",
+  "settings.clearHistory": "Effacer l’historique d’écoute",
+  "settings.clearHistoryHint":
+    "Vide « Écoutés récemment » et « Les plus écoutés »",
+  "settings.clearHistoryTitle": "Effacer l’historique d’écoute ?",
+  "settings.clearHistoryText":
+    "« Écoutés récemment » et « Les plus écoutés » repartent de zéro. Vos titres et playlists ne changent pas.",
+  "toast.historyCleared": "Historique d’écoute effacé",
+
   "toast.addedTo": "Ajouté à {name}",
   "toast.alreadyIn": "Déjà dans {name}",
   "toast.addedSongs_one": "{count} titre ajouté",

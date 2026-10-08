@@ -27,6 +27,7 @@ import { getLikedPlaylist } from "../store/playlists";
 import { formatCountdown } from "../store/sleep";
 import { setThemeMode, useThemeMode } from "../store/theme";
 import { AppText } from "./AppText";
+import { EqIcon } from "./EqIcon";
 import { PlayingBars } from "./PlayingBars";
 
 const DISC = require("../../assets/images/disc_logo.png");
@@ -193,13 +194,7 @@ export function SideMenu({ visible, onClose }: Props) {
             onPress={() => go(() => router.push("/queue"))}
           />
           <MenuItem
-            icon={
-              <MaterialCommunityIcons
-                name="equalizer"
-                size={22}
-                color={colors.purple}
-              />
-            }
+            icon={<EqIcon size={22} color={colors.purple} />}
             label={t("menu.equalizer")}
             onPress={() => go(() => router.push("/equalizer"))}
           />

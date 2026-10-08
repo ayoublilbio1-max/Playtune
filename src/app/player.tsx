@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AddToPlaylistSheet } from "../components/AddToPlaylistSheet";
 import { AppText } from "../components/AppText";
 import { ArtworkVolumeRing } from "../components/ArtworkVolumeRing";
+import { EqIcon } from "../components/EqIcon";
 import { IconButton } from "../components/IconButton";
 import { MarqueeText } from "../components/MarqueeText";
 import { Overlay } from "../components/Overlay";
@@ -269,8 +270,7 @@ export default function PlayerScreen() {
             style={styles.actionButton}
           >
             {({ pressed }) => (
-              <MaterialCommunityIcons
-                name="equalizer"
+              <EqIcon
                 size={28}
                 color={eqOn || pressed ? colors.purple : colors.textMuted}
               />

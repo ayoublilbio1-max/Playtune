@@ -10,4 +10,5 @@
   <string name="pt_widget_pause">Pausa</string>
   <string name="pt_widget_next">Siguiente</string>
   <string name="pt_widget_previous">Anterior</string>
+  <string name="pt_widget_square_description">Reproductor pequeño: disco, canción y reproducir / pausa</string>
 </resources>
