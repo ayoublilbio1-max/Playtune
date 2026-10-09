@@ -357,7 +357,7 @@ export default function PlayerScreen() {
         <IconButton
           name="play-back"
           size={32}
-          color={colors.overlay}
+          color={colors.playerControl}
           pressedColor={colors.accent}
           accessibilityLabel="Previous"
           onPress={() => PlaytuneEngine.previous().catch(() => {})}
@@ -375,7 +375,7 @@ export default function PlayerScreen() {
         <IconButton
           name="play-forward"
           size={32}
-          color={colors.overlay}
+          color={colors.playerControl}
           pressedColor={colors.accent}
           accessibilityLabel="Next"
           onPress={() => PlaytuneEngine.next().catch(() => {})}

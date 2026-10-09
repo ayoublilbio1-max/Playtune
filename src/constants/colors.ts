@@ -30,6 +30,8 @@ export type AppColors = {
   surfaceRaised: string;
   border: string;
   overlay: string;
+  /** Previous / Next buttons on the Player screen (dark icons on light, light icons on dark). */
+  playerControl: string;
   danger: string;
   success: string;
 
@@ -78,6 +80,7 @@ export const darkColors: AppColors = {
   surfaceRaised: "#33184A",
   border: "rgba(255, 255, 255, 0.08)",
   overlay: "rgba(8, 0, 16, 0.72)",
+  playerControl: "rgba(255, 255, 255, 0.88)",
   danger: "#FF4D6D",
   success: "#3DDC97",
 };
@@ -96,6 +99,7 @@ export const lightColors: AppColors = {
   surfaceRaised: "#ECE1F6",
   border: "rgba(30, 11, 46, 0.09)",
   overlay: "rgba(25, 1, 43, 0.45)",
+  playerControl: "rgba(8, 0, 16, 0.72)",
   danger: "#E0344E",
   success: "#17A86C",
 };

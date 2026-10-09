@@ -2,7 +2,7 @@
   "expo": {
     "name": "Playtune",
     "slug": "Playtune",
-    "version": "1.6.5",
+    "version": "1.6.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "playtune",
